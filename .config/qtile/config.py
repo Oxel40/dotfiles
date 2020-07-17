@@ -27,24 +27,29 @@
 from libqtile.config import Key, Screen, Group, Drag, Click
 from libqtile.lazy import lazy
 from libqtile import layout, bar, widget
+from libqtile.widget import backlight
 
 from typing import List  # noqa: F401
 
 import subprocess
 
+# Vars
+mod = 'mod4'
+my_terminal = 'gnome-terminal'
+my_terminal_exec = '--'
+my_wallpaper = '/home/erikp/Pictures/Wallpapers/risk.png'
+
 # Start compositor
+subprocess.call(['killall', 'picom'])
 subprocess.Popen(['picom'])
 
 # Set background
-subprocess.Popen(['feh', '--bg-scale', '/home/erikp/Pictures/Wallpapers/wall.gif'])
+subprocess.Popen(['feh', '--bg-scale', my_wallpaper])
 
 # Start screenlocker
 subprocess.Popen(['xset', 's', '180', '5'])
 subprocess.Popen(['xss-lock', '-n', '/usr/lib/xsecurelock/dimmer', '-l', '--', 'xsecurelock'])
 
-mod = 'mod4'
-my_terminal = 'gnome-terminal'
-my_terminal_exec = '--'
 
 keys = [
     # Switch between windows in current stack pane
@@ -81,9 +86,12 @@ keys = [
     Key([mod], 'd', lazy.spawn('rofi -show run')),
     Key([mod], 'f', lazy.spawn('rofi -show window')),
 
-    Key([], "XF86AudioMute", lazy.spawn("amixer -q set Master toggle")),
-    Key([], "XF86AudioLowerVolume", lazy.spawn("amixer sset Master 5%- unmute")),
-    Key([], "XF86AudioRaiseVolume", lazy.spawn("amixer sset Master 5%+ unmute")),
+    Key([], 'XF86AudioMute', lazy.spawn('amixer -q set Master toggle')),
+    Key([], 'XF86AudioLowerVolume', lazy.spawn('amixer sset Master 5%- unmute')),
+    Key([], 'XF86AudioRaiseVolume', lazy.spawn('amixer sset Master 5%+ unmute')),
+
+    Key([], 'XF86MonBrightnessUp', lazy.spawn('xbacklight -inc 10')),
+    Key([], 'XF86MonBrightnessDown', lazy.spawn('xbacklight -dec 10')),
 ]
 
 groups = [Group(i) for i in 'uiop']
@@ -131,10 +139,11 @@ screens = [
                 widget.GroupBox(),
                 widget.Prompt(),
                 widget.WindowName(),
+
                 widget.Systray(),
                 widget.Volume(),
                 widget.Pacman(mouse_callbacks={'Button1': lambda qtile: qtile.cmd_spawn(my_terminal + ' ' + my_terminal_exec + ' sudo pacman -Syu && echo "Press enter to exit..." && read')}),
-                widget.Clock(format = '%Y-%m-%d %a %I:%M %p'),
+                widget.Clock(format = '%Y-%m-%d %H:%M'),
                 widget.QuickExit(),
             ],
             24,
