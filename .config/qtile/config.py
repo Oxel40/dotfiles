@@ -1,29 +1,3 @@
-# Copyright (c) 2010 Aldo Cortesi
-# Copyright (c) 2010, 2014 dequis
-# Copyright (c) 2012 Randall Ma
-# Copyright (c) 2012-2014 Tycho Andersen
-# Copyright (c) 2012 Craig Barnes
-# Copyright (c) 2013 horsik
-# Copyright (c) 2013 Tao Sauvage
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the 'Software'), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
-
 from libqtile.config import Key, Screen, Group, Drag, Click
 from libqtile.lazy import lazy
 from libqtile import layout, bar, widget
@@ -40,7 +14,7 @@ my_terminal_exec = '--'
 my_wallpaper = '/home/erikp/Pictures/Wallpapers/risk.png'
 
 # Start compositor
-subprocess.call(['killall', 'picom'])
+# subprocess.Popen(['killall', 'picom', ';', 'picom'])
 subprocess.Popen(['picom'])
 
 # Set background
@@ -48,7 +22,8 @@ subprocess.Popen(['feh', '--bg-scale', my_wallpaper])
 
 # Start screenlocker
 subprocess.Popen(['xset', 's', '180', '5'])
-subprocess.Popen(['xss-lock', '-n', '/usr/lib/xsecurelock/dimmer', '-l', '--', 'xsecurelock'])
+subprocess.Popen(
+    ['xss-lock', '-n', '/usr/lib/xsecurelock/dimmer', '-l', '--', 'xsecurelock'])
 
 
 keys = [
@@ -90,8 +65,10 @@ keys = [
     Key([], 'XF86AudioLowerVolume', lazy.spawn('amixer sset Master 5%- unmute')),
     Key([], 'XF86AudioRaiseVolume', lazy.spawn('amixer sset Master 5%+ unmute')),
 
-    Key([], 'XF86MonBrightnessUp', lazy.spawn('xbacklight -inc 10')),
-    Key([], 'XF86MonBrightnessDown', lazy.spawn('xbacklight -dec 10')),
+    Key([], 'XF86MonBrightnessUp', lazy.spawn(
+        'bash -c "if [[ 1 -eq $(echo \\"$(xbacklight -get) < 5\\" | bc) ]]; then xbacklight -set 5; else xbacklight -inc 5; fi"')),
+    Key([], 'XF86MonBrightnessDown', lazy.spawn(
+        'bash -c "if [[ 1 -eq $(echo \\"$(xbacklight -get) <= 5\\" | bc) ]]; then xbacklight -set 1; else xbacklight -dec 5; fi"')),
 ]
 
 groups = [Group(i) for i in 'uiop']
@@ -102,15 +79,23 @@ for i in groups:
         Key([mod], i.name, lazy.group[i.name].toscreen()),
 
         # mod1 + shift + letter of group = switch to & move focused window to group
-        Key([mod, 'shift'], i.name, lazy.window.togroup(i.name, switch_group=True)),
+        Key([mod, 'shift'], i.name, lazy.window.togroup(
+            i.name, switch_group=True)),
         # Or, use below if you prefer not to switch to that group.
         # # mod1 + shift + letter of group = move focused window to group
         # Key([mod, 'shift'], i.name, lazy.window.togroup(i.name)),
     ])
 
+layout_theme = {
+    "border_width": 2,
+    # "margin": 4,
+    "border_focus": "#8fbcbb",
+    "border_normal": "#1D2330",
+}
+
 layouts = [
-    layout.Max(),
-    layout.Stack(num_stacks=2),
+    layout.Max(**layout_theme),
+    layout.Stack(num_stacks=2, **layout_theme),
     # Try more layouts by unleashing below layouts.
     # layout.Bsp(),
     # layout.Columns(),
@@ -118,7 +103,7 @@ layouts = [
     # layout.MonadTall(),
     # layout.MonadWide(),
     # layout.RatioTile(),
-    layout.Tile(),
+    layout.Tile(**layout_theme),
     # layout.TreeTab(),
     # layout.VerticalTile(),
     # layout.Zoomy(),
@@ -126,8 +111,9 @@ layouts = [
 
 widget_defaults = dict(
     font='sans',
-    fontsize=12,
-    padding=3,
+    fontsize=14,
+    padding=5,
+    background='141a1b',
 )
 extension_defaults = widget_defaults.copy()
 
@@ -136,15 +122,42 @@ screens = [
         bottom=bar.Bar(
             [
                 widget.CurrentLayout(),
-                widget.GroupBox(),
+                widget.GroupBox(
+                    margin_y=4,
+                    borderwidth=3,
+                    rounded=True,
+                    highlight_method="line",
+                    highlight_color=['2eb398', '2eb398'],
+                    this_current_screen_border='2eb398',
+                ),
                 widget.Prompt(),
                 widget.WindowName(),
 
                 widget.Systray(),
-                widget.Volume(),
-                widget.Pacman(mouse_callbacks={'Button1': lambda qtile: qtile.cmd_spawn(my_terminal + ' ' + my_terminal_exec + ' sudo pacman -Syu && echo "Press enter to exit..." && read')}),
-                widget.Clock(format = '%Y-%m-%d %H:%M'),
-                widget.QuickExit(),
+                widget.TextBox(
+                    text="|"
+                ),
+                widget.Battery(
+                    format='Battery: {char} {percent:2.0%} {hour:d}:{min:02d}'
+                ),
+                widget.TextBox(
+                    text="|"
+                ),
+                widget.Volume(
+                    fmt='Volume: {}'
+                ),
+                widget.TextBox(
+                    text="|"
+                ),
+                widget.Pacman(
+                    fmt='Updates: {}',
+                    mouse_callbacks={'Button1': lambda qtile: qtile.cmd_spawn(
+                        my_terminal + ' ' + my_terminal_exec + ' sudo pacman -Syu && echo "Press enter to exit..." && read')}
+                ),
+                widget.TextBox(
+                    text="|"
+                ),
+                widget.Clock(format='%Y-%m-%d %H:%M'),
             ],
             24,
         ),
@@ -157,7 +170,8 @@ mouse = [
          start=lazy.window.get_position()),
     Drag([mod], 'Button3', lazy.window.set_size_floating(),
          start=lazy.window.get_size()),
-    Click([mod], 'Button2', lazy.window.bring_to_front())
+    Click([mod], 'Button2', lazy.window.bring_to_front()),
+    Click([mod, 'control'], 'Button1', lazy.window.toggle_floating())
 ]
 
 dgroups_key_binder = None
@@ -166,23 +180,26 @@ main = None
 follow_mouse_focus = True
 bring_front_click = False
 cursor_warp = False
-floating_layout = layout.Floating(float_rules=[
-    # Run the utility of `xprop` to see the wm class and name of an X client.
-    {'wmclass': 'confirm'},
-    {'wmclass': 'dialog'},
-    {'wmclass': 'download'},
-    {'wmclass': 'error'},
-    {'wmclass': 'file_progress'},
-    {'wmclass': 'notification'},
-    {'wmclass': 'splash'},
-    {'wmclass': 'toolbar'},
-    {'wmclass': 'confirmreset'},  # gitk
-    {'wmclass': 'makebranch'},  # gitk
-    {'wmclass': 'maketag'},  # gitk
-    {'wname': 'branchdialog'},  # gitk
-    {'wname': 'pinentry'},  # GPG key password entry
-    {'wmclass': 'ssh-askpass'},  # ssh-askpass
-])
+floating_layout = layout.Floating(
+    float_rules=[
+        # Run the utility of `xprop` to see the wm class and name of an X client.
+        {'wmclass': 'confirm'},
+        {'wmclass': 'dialog'},
+        {'wmclass': 'download'},
+        {'wmclass': 'error'},
+        {'wmclass': 'file_progress'},
+        {'wmclass': 'notification'},
+        {'wmclass': 'splash'},
+        {'wmclass': 'toolbar'},
+        {'wmclass': 'confirmreset'},  # gitk
+        {'wmclass': 'makebranch'},  # gitk
+        {'wmclass': 'maketag'},  # gitk
+        {'wname': 'branchdialog'},  # gitk
+        {'wname': 'pinentry'},  # GPG key password entry
+        {'wmclass': 'ssh-askpass'},  # ssh-askpass
+    ],
+    **layout_theme
+)
 auto_fullscreen = True
 focus_on_window_activation = 'smart'
 
