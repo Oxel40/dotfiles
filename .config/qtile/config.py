@@ -14,8 +14,10 @@ my_terminal_exec = '--'
 my_wallpaper = '/home/erikp/Pictures/Wallpapers/risk.png'
 
 # Start compositor
-# subprocess.Popen(['killall', 'picom', ';', 'picom'])
 subprocess.Popen(['picom'])
+
+# Start gestures
+subprocess.Popen(['libinput-gestures'])
 
 # Set background
 subprocess.Popen(['feh', '--bg-scale', my_wallpaper])
@@ -57,6 +59,8 @@ keys = [
     Key([mod], 'r', lazy.spawncmd()),
 
     # Custom keybindings
+    Key([mod, 'control'], 'Return', lazy.layout.client_to_next()),
+
     Key([mod, 'control'], 'l', lazy.spawn('xsecurelock')),
     Key([mod], 'd', lazy.spawn('rofi -show run')),
     Key([mod], 'f', lazy.spawn('rofi -show window')),
