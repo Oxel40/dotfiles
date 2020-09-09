@@ -1,31 +1,24 @@
 from libqtile.config import Key, Screen, Group, Drag, Click
 from libqtile.lazy import lazy
-from libqtile import layout, bar, widget
+from libqtile import layout, bar, widget, hook
 from libqtile.widget import backlight
 
 from typing import List  # noqa: F401
 
+import os
 import subprocess
+
+
+@hook.subscribe.startup_once
+def autostart():
+    home = os.path.expanduser('~/.config/qtile/autostart.sh')
+    subprocess.call(['bash', home])
+
 
 # Vars
 mod = 'mod4'
 my_terminal = 'gnome-terminal'
 my_terminal_exec = '--'
-my_wallpaper = '/home/erikp/Pictures/Wallpapers/risk.png'
-
-# Start compositor
-subprocess.Popen(['picom'])
-
-# Start gestures
-subprocess.Popen(['libinput-gestures'])
-
-# Set background
-subprocess.Popen(['feh', '--bg-scale', my_wallpaper])
-
-# Start screenlocker
-subprocess.Popen(['xset', 's', '180', '5'])
-subprocess.Popen(
-    ['xss-lock', '-n', '/usr/lib/xsecurelock/dimmer', '-l', '--', 'xsecurelock'])
 
 
 keys = [
@@ -73,6 +66,26 @@ keys = [
         'bash -c "if [[ 1 -eq $(echo \\"$(xbacklight -get) < 5\\" | bc) ]]; then xbacklight -set 5; else xbacklight -inc 5; fi"')),
     Key([], 'XF86MonBrightnessDown', lazy.spawn(
         'bash -c "if [[ 1 -eq $(echo \\"$(xbacklight -get) <= 5\\" | bc) ]]; then xbacklight -set 1; else xbacklight -dec 5; fi"')),
+
+    # dt monitor keys
+    Key([mod], "1",
+        lazy.to_screen(0),
+        desc='Keyboard focus to monitor 1'
+        ),
+    Key([mod], "2",
+        lazy.to_screen(1),
+        desc='Keyboard focus to monitor 2'
+        ),
+    # Switch focus of monitors
+    Key([mod], "l",
+        lazy.next_screen(),
+        desc='Move focus to next monitor'
+        ),
+    Key([mod], "h",
+        lazy.prev_screen(),
+        desc='Move focus to prev monitor'
+        ),
+
 ]
 
 groups = [Group(i) for i in 'uiop']
@@ -104,7 +117,7 @@ layouts = [
     # layout.Bsp(),
     # layout.Columns(),
     # layout.Matrix(),
-    # layout.MonadTall(),
+    layout.MonadTall(**layout_theme),
     # layout.MonadWide(),
     # layout.RatioTile(),
     layout.Tile(**layout_theme),
@@ -120,6 +133,7 @@ widget_defaults = dict(
     background='141a1b',
 )
 extension_defaults = widget_defaults.copy()
+
 
 screens = [
     Screen(
@@ -138,11 +152,10 @@ screens = [
                 widget.WindowName(),
 
                 widget.Systray(),
-                widget.TextBox(
-                    text="|"
-                ),
-                widget.Battery(
-                    format='Battery: {char} {percent:2.0%} {hour:d}:{min:02d}'
+                widget.CheckUpdates(
+                    fmt='| Updates: {}',
+                    mouse_callbacks={'Button1': lambda qtile: qtile.cmd_spawn(
+                        my_terminal + ' ' + my_terminal_exec + 'bash -c \'sudo pacman -Syyu && echo "Press enter to exit..." && read\'')}
                 ),
                 widget.TextBox(
                     text="|"
@@ -153,19 +166,29 @@ screens = [
                 widget.TextBox(
                     text="|"
                 ),
-                widget.Pacman(
-                    fmt='Updates: {}',
-                    mouse_callbacks={'Button1': lambda qtile: qtile.cmd_spawn(
-                        my_terminal + ' ' + my_terminal_exec + ' sudo pacman -Syu && echo "Press enter to exit..." && read')}
-                ),
-                widget.TextBox(
-                    text="|"
-                ),
                 widget.Clock(format='%Y-%m-%d %H:%M'),
             ],
             24,
         ),
     ),
+    Screen(
+        bottom=bar.Bar(
+            [
+                widget.CurrentLayout(),
+                widget.GroupBox(
+                    margin_y=4,
+                    borderwidth=3,
+                    rounded=True,
+                    highlight_method="line",
+                    highlight_color=['2eb398', '2eb398'],
+                    this_current_screen_border='2eb398',
+                ),
+                widget.WindowName(),
+                widget.Clock(format='%Y-%m-%d %H:%M'),
+            ],
+            24,
+        )
+    )
 ]
 
 # Drag floating layouts.
@@ -201,6 +224,7 @@ floating_layout = layout.Floating(
         {'wname': 'branchdialog'},  # gitk
         {'wname': 'pinentry'},  # GPG key password entry
         {'wmclass': 'ssh-askpass'},  # ssh-askpass
+        # {'wmclass': 'zoom'},  # zoom metings
     ],
     **layout_theme
 )
