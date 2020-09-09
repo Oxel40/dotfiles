@@ -140,14 +140,15 @@ ex ()
 
 # My custom stuff
 export PATH=\
-/usr/java/jdk-13.0.2/bin:\
 /usr/local/go/bin:\
 /opt/cuda-10.1/include:\
 /opt/cuda-10.1/bin:\
 /opt/apache-maven-3.6.3/bin:\
 $PATH
 
-JAVA_HOME=/usr/java/jdk-13.0.2/
+# /usr/java/jdk-13.0.2/bin:\
+# JAVA_HOME=/usr/java/jdk-13.0.2/
+# ^ is not needed. use 'archlinux-java' to set java environment
 
 # neofetch is no longer used because it's so slow
 sh /home/erikp/.config/ufetch/ufetch-manjaro
