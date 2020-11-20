@@ -157,3 +157,4 @@ source /home/erikp/.config/broot/launcher/bash/br
 
 alias py=python3
 alias dotfiles='/usr/bin/git --git-dir=$HOME/dotfiles/ --work-tree=$HOME'
+alias xow-pair='sudo systemctl kill -s SIGUSR1 xow'
