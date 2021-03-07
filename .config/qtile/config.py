@@ -9,8 +9,31 @@ import os
 import subprocess
 
 
+sess_is_qtile = os.environ.get('DESKTOP_SESSION') == 'qtile'
+
+
+# Integrate with gnome
+@hook.subscribe.startup
+def dbus_register():
+    if sess_is_qtile:
+        return
+    id = os.environ.get('DESKTOP_AUTOSTART_ID')
+    if not id:
+        return
+    subprocess.Popen(['dbus-send',
+                      '--session',
+                      '--print-reply',
+                      '--dest=org.gnome.SessionManager',
+                      '/org/gnome/SessionManager',
+                      'org.gnome.SessionManager.RegisterClient',
+                      'string:qtile',
+                      'string:' + id])
+
+
 @hook.subscribe.startup_once
 def autostart():
+    if not sess_is_qtile:
+        return
     home = os.path.expanduser('~/.config/qtile/autostart.sh')
     subprocess.call(['bash', home])
 
@@ -47,14 +70,16 @@ keys = [
     Key([mod], 'Tab', lazy.next_layout()),
     Key([mod], 'w', lazy.window.kill()),
 
+    Key([mod, 'control'], 'l', lazy.spawn('xsecurelock') if sess_is_qtile else lazy.spawn('gnome-screensaver-command -l')),
+    Key([mod, 'control'], 'q', lazy.shutdown() if sess_is_qtile else lazy.spawn('gnome-session-quit --logout --no-prompt')),
     Key([mod, 'control'], 'r', lazy.restart()),
-    Key([mod, 'control'], 'q', lazy.shutdown()),
     Key([mod], 'r', lazy.spawncmd()),
 
     # Custom keybindings
     Key([mod, 'control'], 'Return', lazy.layout.client_to_next()),
 
-    Key([mod, 'control'], 'l', lazy.spawn('xsecurelock')),
+    Key([mod, 'mod1'], 'Return', lazy.window.toggle_fullscreen()),
+
     Key([mod], 'd', lazy.spawn('rofi -show run')),
     Key([mod], 'f', lazy.spawn('rofi -show window')),
 
@@ -153,7 +178,7 @@ screens = [
 
                 widget.Systray(),
                 widget.CheckUpdates(
-                    fmt='| Updates: {}',
+                    fmt='| {}',
                     mouse_callbacks={'Button1': lambda qtile: qtile.cmd_spawn(
                         my_terminal + ' ' + my_terminal_exec + 'bash -c \'sudo pacman -Syyu && echo "Press enter to exit..." && read\'')}
                 ),
