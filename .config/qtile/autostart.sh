@@ -4,7 +4,10 @@
 # libinput-gestures &
 
 # Set background
-feh --bg-scale $HOME/Pictures/Wallpapers/129818.png &
+nitrogen --restore &
+
+# Notification server
+dunst &
 
 # Start screenlocker
 # xset s 300 5
@@ -18,4 +21,5 @@ xinput --set-prop 'pointer:Razer Razer DeathAdder 2013' 'libinput Accel Profile 
 
 # Xorg setup because GMD just doesn't give a fuck about xorg.conf
 xrandr --output HDMI-0 --mode 1920x1080 --rate 60 --right-of DP-0
+xrandr --output DVI-D-0 --mode 1920x1080 --rate 60 --right-of DP-0
 xrandr --output DP-0 --mode 1920x1080 --rate 144 --primary
