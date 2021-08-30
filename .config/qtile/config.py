@@ -2,6 +2,7 @@ from libqtile.config import Key, Screen, Group, Drag, Click
 from libqtile.lazy import lazy
 from libqtile import layout, bar, widget
 from libqtile.widget import backlight
+from libqtile.widget import base
 
 from typing import List  # noqa: F401
 
@@ -9,9 +10,10 @@ import subprocess
 
 # Vars
 mod = 'mod4'
-my_terminal = 'gnome-terminal'
-my_terminal_exec = '--'
-my_wallpaper = '/home/erikp/Pictures/Wallpapers/risk.png'
+my_terminal = 'alacritty'
+my_terminal_exec = '-e'
+# my_wallpaper = '/home/erikp/Pictures/Wallpapers/risk.png'
+my_wallpaper = '/home/erikp/Pictures/Wallpapers/wall.gif'
 
 # Start compositor
 subprocess.Popen(['picom'])
@@ -26,6 +28,31 @@ subprocess.Popen(['feh', '--bg-scale', my_wallpaper])
 subprocess.Popen(['xset', 's', '180', '5'])
 subprocess.Popen(
     ['xss-lock', '-n', '/usr/lib/xsecurelock/dimmer', '-l', '--', 'xsecurelock'])
+
+# Start ssh-agent
+# subprocess.Popen(['eval', '$(ssh-agent)'])
+
+
+# Costom widgets to be used in the bar
+#
+# Screen Brightness
+class Brightness(base.InLoopPollText):
+
+    def __init__(self, **config):
+        self.max_brightness = self.get_max_brightness()
+        base.InLoopPollText.__init__(self, **config)
+
+    def get_curent_brightness(self):
+        with open('/sys/class/backlight/intel_backlight/brightness', 'r') as f:
+            return int(f.read())
+
+    def get_max_brightness(self):
+        with open('/sys/class/backlight/intel_backlight/max_brightness', 'r') as f:
+            return int(f.read())
+
+    def poll(self):
+        current_brightness = self.get_curent_brightness()
+        return "{}%".format(round(current_brightness * 100 / self.max_brightness))
 
 
 keys = [
@@ -53,6 +80,7 @@ keys = [
     # Toggle between different layouts as defined below
     Key([mod], 'Tab', lazy.next_layout()),
     Key([mod], 'w', lazy.window.kill()),
+    Key([mod], 'x', lazy.window.kill()),
 
     Key([mod, 'control'], 'r', lazy.restart()),
     Key([mod, 'control'], 'q', lazy.shutdown()),
@@ -99,12 +127,12 @@ layout_theme = {
 
 layouts = [
     layout.Max(**layout_theme),
-    layout.Stack(num_stacks=2, **layout_theme),
+    # layout.Stack(num_stacks=2, **layout_theme),
     # Try more layouts by unleashing below layouts.
     # layout.Bsp(),
     # layout.Columns(),
     # layout.Matrix(),
-    # layout.MonadTall(),
+    layout.MonadTall(**layout_theme),
     # layout.MonadWide(),
     # layout.RatioTile(),
     layout.Tile(**layout_theme),
@@ -117,7 +145,7 @@ widget_defaults = dict(
     font='sans',
     fontsize=14,
     padding=5,
-    background='141a1b',
+    background='141a1b',  # #141a1b
 )
 extension_defaults = widget_defaults.copy()
 
@@ -132,12 +160,18 @@ screens = [
                     rounded=True,
                     highlight_method="line",
                     highlight_color=['2eb398', '2eb398'],
-                    this_current_screen_border='2eb398',
+                    this_current_screen_border='2eb398',  # #2eb398
+                    disable_drag=True,
                 ),
                 widget.Prompt(),
                 widget.WindowName(),
 
                 widget.Systray(),
+                widget.CheckUpdates(
+                    fmt='| {}',
+                    mouse_callbacks={'Button1': lambda qtile: lazy.spawn(
+                        my_terminal + ' ' + my_terminal_exec + ' sudo pacman -Syyu && echo "Press enter to exit..." && read')}
+                ),
                 widget.TextBox(
                     text="|"
                 ),
@@ -153,10 +187,9 @@ screens = [
                 widget.TextBox(
                     text="|"
                 ),
-                widget.Pacman(
-                    fmt='Updates: {}',
-                    mouse_callbacks={'Button1': lambda qtile: qtile.cmd_spawn(
-                        my_terminal + ' ' + my_terminal_exec + ' sudo pacman -Syu && echo "Press enter to exit..." && read')}
+                Brightness(
+                    update_interval=1,
+                    fmt='Brightness: {}'
                 ),
                 widget.TextBox(
                     text="|"
