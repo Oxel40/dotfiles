@@ -10,8 +10,8 @@ nitrogen --restore &
 dunst &
 
 # Start screenlocker
-# xset s 300 5
-# xss-lock -n /usr/lib/xsecurelock/dimmer -l -- xsecurelock &
+xset s 300 5
+xss-lock -n /usr/lib/xsecurelock/dimmer -l -- xsecurelock &
 
 # Authenticathon manager
 /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1 &
@@ -23,3 +23,8 @@ xinput --set-prop 'pointer:Razer Razer DeathAdder 2013' 'libinput Accel Profile 
 xrandr --output HDMI-0 --mode 1920x1080 --rate 60 --right-of DP-0
 xrandr --output DVI-D-0 --mode 1920x1080 --rate 60 --right-of DP-0
 xrandr --output DP-0 --mode 1920x1080 --rate 144 --primary
+
+if command -v libinput-gestures &> /dev/null
+then
+	libinput-gestures &
+fi
