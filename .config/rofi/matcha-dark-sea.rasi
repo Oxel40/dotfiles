@@ -31,6 +31,7 @@
     selected-urgent-foreground:  rgba ( 249, 249, 249, 100 % );
     separatorcolor:              #2d3436;
     spacing:                     2;
+	text-color:                  @foreground;
     urgent-background:           rgba ( 29, 31, 33, 17 % );
     urgent-foreground:           rgba ( 204, 102, 102, 100 % );
 }
