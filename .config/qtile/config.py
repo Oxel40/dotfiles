@@ -194,6 +194,13 @@ screens = [
                 widget.WindowName(),
 
                 widget.Systray(),
+                
+                widget.TextBox(
+                    text="|"
+                ),
+                widget.Battery(
+                    format='Battery: {char} {percent:2.0%} {hour:d}:{min:02d}'
+                ),
                 widget.TextBox(
                     text="|"
                 ),
