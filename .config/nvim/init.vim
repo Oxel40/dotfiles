@@ -55,6 +55,8 @@ endif
 " Navigation
 nnoremap ö }
 nnoremap ä {
+nnoremap Ö ]]
+nnoremap Ä [[
 
 " Split focus keymaps
 nnoremap <C-h> <C-w>h
