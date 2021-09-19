@@ -23,6 +23,69 @@ def float_to_front(qtile):
             window.cmd_bring_to_front()
 
 
+def generate_bar(i):
+    """
+    Generate bottom bar depending on screen number
+    """
+    bar_layout = [
+        widget.CurrentLayoutIcon(
+               custom_icon_paths=[os.path.expanduser("~/.config/qtile/icons")],
+               scale=0.7,
+               ),
+        widget.GroupBox(
+            margin_y=4,
+            borderwidth=3,
+            rounded=True,
+            disable_drag=True,
+            highlight_method="line",
+            highlight_color=['2eb398', '2eb398'],
+            this_current_screen_border='2eb398',
+        ),
+        widget.Prompt(),
+        widget.WindowName(),
+    ]
+
+    # if it's the main monitor, add sys tray
+    if i == 0:
+        bar_layout.extend([
+            widget.Systray(),
+            widget.TextBox(
+                text="|"
+            ),
+        ])
+
+    # if we have a battery
+    if i == 0 and os.path.exists("/sys/class/power_supply/BAT0"):
+        bar_layout.extend([
+            widget.Battery(
+                format='Battery: {char} {percent:2.0%} {hour:d}:{min:02d}'
+            ),
+            widget.TextBox(
+                text="|"
+            ),
+        ])
+
+    # TODO backlight
+
+    # if it's the main monitor, add volume
+    if i == 0:
+        bar_layout.extend([
+            widget.Volume(
+                fmt='Volume: {}'
+            ),
+            widget.TextBox(
+                text="|"
+            ),
+        ])
+
+    bar_layout.append(
+        widget.Clock(format='%Y-%m-%d %H:%M')
+    )
+
+    out_bar = bar.Bar(bar_layout, 24)
+    return out_bar
+
+
 # Vars
 mod = 'mod4'
 my_terminal = 'alacritty'
@@ -172,63 +235,12 @@ widget_defaults = dict(
 )
 extension_defaults = widget_defaults.copy()
 
-
 screens = [
     Screen(
-        bottom=bar.Bar(
-            [
-                widget.CurrentLayoutIcon(
-                       custom_icon_paths = [os.path.expanduser("~/.config/qtile/icons")],
-                       scale = 0.7,
-                       ),
-                widget.GroupBox(
-                    margin_y=4,
-                    borderwidth=3,
-                    rounded=True,
-                    disable_drag=True,
-                    highlight_method="line",
-                    highlight_color=['2eb398', '2eb398'],
-                    this_current_screen_border='2eb398',
-                ),
-                widget.Prompt(),
-                widget.WindowName(),
-
-                widget.Systray(),
-                widget.TextBox(
-                    text="|"
-                ),
-                widget.Volume(
-                    fmt='Volume: {}'
-                ),
-                widget.TextBox(
-                    text="|"
-                ),
-                widget.Clock(format='%Y-%m-%d %H:%M'),
-            ],
-            24,
-        ),
+        bottom=generate_bar(0)
     ),
     Screen(
-        bottom=bar.Bar(
-            [
-                widget.CurrentLayoutIcon(
-                       custom_icon_paths = [os.path.expanduser("~/.config/qtile/icons")],
-                       scale = 0.7,
-                       ),
-                widget.GroupBox(
-                    margin_y=4,
-                    borderwidth=3,
-                    rounded=True,
-                    disable_drag=True,
-                    highlight_method="line",
-                    highlight_color=['2eb398', '2eb398'],
-                    this_current_screen_border='2eb398',
-                ),
-                widget.WindowName(),
-                widget.Clock(format='%Y-%m-%d %H:%M'),
-            ],
-            24,
-        )
+        bottom=generate_bar(1)
     )
 ]
 
