@@ -56,6 +56,10 @@ endif
 nnoremap ö }
 nnoremap ä {
 
+" Tab navigation
+nnoremap <Tab> gt
+nnoremap <S-Tab> gT
+
 " Split focus keymaps
 nnoremap <C-h> <C-w>h
 nnoremap <C-j> <C-w>j
@@ -104,8 +108,13 @@ lua << EOF
 
 	end
 
+	-- C/C++
+	require('lspconfig').ccls.setup({
+		on_attach = custom_lsp_attach
+	})
+
 	-- Python
-	require('lspconfig').pyls.setup({
+	require('lspconfig').pylsp.setup({
 		on_attach = custom_lsp_attach
 	})
 
