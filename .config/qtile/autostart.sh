@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Start compositor
 # picom &
 # Start gestures
@@ -10,8 +12,8 @@ nitrogen --restore &
 dunst &
 
 # Start screenlocker
-xset s 300 5
-xss-lock -n /usr/lib/xsecurelock/dimmer -l -- xsecurelock &
+# xset s 300 5
+# xss-lock -n /usr/lib/xsecurelock/dimmer -l -- xsecurelock &
 
 # Authenticathon manager
 /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1 &
