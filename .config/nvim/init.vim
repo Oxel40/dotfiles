@@ -1,47 +1,44 @@
 set nocompatible
 
-call plug#begin(stdpath('data') . '/plugged')
-
-" Code completion
-Plug 'neovim/nvim-lspconfig'
-Plug 'nvim-lua/completion-nvim'
-
-" Explorer
-Plug 'preservim/nerdtree'
-
-" Syntax high lighting
-Plug 'sheerun/vim-polyglot'
-
-" Themes
-Plug 'lifepillar/vim-gruvbox8'
-Plug 'joshdick/onedark.vim'
-Plug 'Mofiqul/dracula.nvim'
-
-" Bottom bar
-Plug 'itchyny/lightline.vim'
-
-call plug#end()
-
+" Lua init
+lua require('init')
 
 " Colorscheme
 set termguicolors
 colorscheme onedark
 
-" Lightline colorscheme
+" " Lightline colorscheme
+" let g:lightline = {
+"   \ 'colorscheme': 'onedark',
+"   \ }
+
+" Lightline
 let g:lightline = {
+  \ 'active': {
+  \   'left': [ [ 'mode' ], [ 'lsp_info', 'lsp_hints', 'lsp_errors', 'lsp_warnings', 'lsp_ok' ], [ 'lsp_status' ]]
+  \ },
   \ 'colorscheme': 'onedark',
   \ }
+"" Disable showmode, this is shown in line
+set noshowmode
+
+"" register lsp compoments:
+call lightline#lsp#register()
 
 " Tabs
 set tabstop=4
 set shiftwidth=4
 set noexpandtab
+" Disable tabline in dashboard and terminal
+let g:indent_blankline_bufname_exclude = ['dashboard', 'terminal']
+let g:indent_blankline_buftype_exclude = ['dashboard', 'terminal']
 
 " Scrolling
 set scrolloff=5
 
 " Line numbers
 set number
+autocmd TermOpen * setlocal nonumber norelativenumber
 
 " Line endings
 set ff=unix
@@ -52,13 +49,27 @@ if has("autocmd")
   au BufReadPost * if line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g'\"" | endif
 endif
 
+" Enable mouse suport
+set mouse=nvi
+
+" Mouse scroll, TODO: more smothness
+map <ScrollWheelUp> <C-Y>
+map <ScrollWheelDown> <C-E>
+
 " Navigation
 nnoremap ö }
 nnoremap ä {
+nnoremap Ö ]]
+nnoremap Ä [[
+inoremap <C-h> <Left>
+inoremap <C-j> <Down>
+inoremap <C-k> <Up>
+inoremap <C-l> <Right>
 
 " Tab navigation
 nnoremap <Tab> gt
 nnoremap <S-Tab> gT
+nnoremap T :tabnew<CR>
 
 " Split focus keymaps
 nnoremap <C-h> <C-w>h
@@ -66,76 +77,52 @@ nnoremap <C-j> <C-w>j
 nnoremap <C-k> <C-w>k
 nnoremap <C-l> <C-w>l
 
-" Spelling shortcuts
-command SV setlocal spelllang=sv | setlocal spell | setlocal wrap linebreak
-command EN setlocal spelllang=en | setlocal spell | setlocal wrap linebreak
-command Nospell setlocal nospell | setlocal nowrap
+" Spelling commands
+command SpellSetup setlocal spell <bar> setlocal wrap linebreak <bar> execute 'nnoremap <buffer> j gj' <bar> execute 'nnoremap <buffer> k gk'
+command SV setlocal spelllang=sv <bar> SpellSetup
+command EN setlocal spelllang=en <bar> SpellSetup
+command Nospell setlocal nospell <bar> setlocal nowrap <bar> execute 'unmap <buffer> j' <bar> execute 'unmap <buffer> k'
 
 " Default wraping behavior
 set nowrap
 
-" NERDTree
-"" Open the existing NERDTree on each new tab
-autocmd BufWinEnter * silent NERDTreeMirror
-"" Mirror the NERDTree before showing it. This makes it the same on all tabs
-nnoremap <C-n> :NERDTreeMirror<CR>:NERDTreeToggle<CR>
-" nnoremap <C-n> :NERDTreeMirror<CR>:NERDTreeFocus<CR>
+"" " NERDTree
+"" "" Open the existing NERDTree on each new tab
+"" autocmd BufWinEnter * silent NERDTreeMirror
+"" "" Mirror the NERDTree before showing it. This makes it the same on all tabs
+"" nnoremap <C-n> :NERDTreeMirror<CR>:NERDTreeToggle<CR>
+"" " nnoremap <C-n> :NERDTreeMirror<CR>:NERDTreeFocus<CR>
+
+" Terminal mode
+"" Exit terminal insert mode
+tnoremap jk <C-\><C-n>
 
 " Completion setup
 set completeopt=menuone,noinsert,noselect
 let g:completion_matching_strategy_list = ['exact', 'substring', 'fuzzy']
 
-lua << EOF
-
-	local custom_lsp_attach = function(client)
-		-- Options
-		local opts = { noremap=true }
-
-		-- See `:help nvim_buf_set_keymap()` for more information
-		vim.api.nvim_buf_set_keymap(0, 'n', 'K', '<cmd>lua vim.lsp.buf.hover()<CR>', opts)
-		vim.api.nvim_buf_set_keymap(0, 'n', '<c-K>', '<cmd>lua vim.lsp.buf.definition()<CR>', opts)
-		vim.api.nvim_buf_set_keymap(0, 'n', 'E', '<cmd>lua vim.lsp.diagnostic.show_line_diagnostics()<CR>', opts)
-		vim.api.nvim_buf_set_keymap(0, 'n', 'F', '<cmd>lua vim.lsp.buf.formatting()<CR>', opts)
-		-- ... and other keymappings for LSP
-
-		-- Use LSP as the handler for omnifunc.
-		--    See `:help omnifunc` and `:help ins-completion` for more information.
-		vim.api.nvim_buf_set_option(0, 'omnifunc', 'v:lua.vim.lsp.omnifunc')
-
-
-		-- For plugins with an `on_attach` callback, call them here. For example:
-		require('completion').on_attach()
-
-	end
-
-	-- C/C++
-	require('lspconfig').ccls.setup({
-		on_attach = custom_lsp_attach
-	})
-
-	-- Python
-	require('lspconfig').pylsp.setup({
-		on_attach = custom_lsp_attach
-	})
-
-	-- Go
-	require('lspconfig').gopls.setup({
-		on_attach = custom_lsp_attach
-	})
-
-	-- Rust
-	require('lspconfig').rust_analyzer.setup({
-		on_attach = custom_lsp_attach
-	})
-
-	-- Elm
-	require('lspconfig').elmls.setup({
-		on_attach = custom_lsp_attach
-	})
-
-	-- Haskell
-	require('lspconfig').hls.setup({
-		on_attach = custom_lsp_attach
-	})
-
-EOF
+" Dashboard setup (and related key bindings)
+let g:mapleader="\<Space>"
+let g:dashboard_default_executive = 'fzf'
+nmap <Leader>ss :<C-u>SessionSave<CR>
+nmap <Leader>sl :<C-u>SessionLoad<CR>
+nnoremap <silent> <Leader>fh :DashboardFindHistory<CR>
+nnoremap <silent> <Leader>ff :DashboardFindFile<CR>
+nnoremap <silent> <Leader>tc :DashboardChangeColorscheme<CR>
+nnoremap <silent> <Leader>fa :DashboardFindWord<CR>
+nnoremap <silent> <Leader>fb :DashboardJumpMark<CR>
+nnoremap <silent> <Leader>cn :DashboardNewFile<CR>
+" Dashboard image
+let g:dashboard_custom_header =<< trim END
+  ⣴⣶⣤⡤⠦⣤⣀⣤⠆     ⣈⣭⣭⣿⣶⣿⣦⣼⣆         
+   ⠉⠻⢿⣿⠿⣿⣿⣶⣦⠤⠄⡠⢾⣿⣿⡿⠋⠉⠉⠻⣿⣿⡛⣦       
+         ⠈⢿⣿⣟⠦ ⣾⣿⣿⣷⠄⠄⠄⠄⠻⠿⢿⣿⣧⣄     
+          ⣸⣿⣿⢧ ⢻⠻⣿⣿⣷⣄⣀⠄⠢⣀⡀⠈⠙⠿⠄    
+         ⢠⣿⣿⣿⠈  ⠡⠌⣻⣿⣿⣿⣿⣿⣿⣿⣛⣳⣤⣀⣀   
+  ⢠⣧⣶⣥⡤⢄ ⣸⣿⣿⠘⠄ ⢀⣴⣿⣿⡿⠛⣿⣿⣧⠈⢿⠿⠟⠛⠻⠿⠄  
+ ⣰⣿⣿⠛⠻⣿⣿⡦⢹⣿⣷   ⢊⣿⣿⡏  ⢸⣿⣿⡇ ⢀⣠⣄⣾⠄   
+⣠⣿⠿⠛⠄⢀⣿⣿⣷⠘⢿⣿⣦⡀ ⢸⢿⣿⣿⣄ ⣸⣿⣿⡇⣪⣿⡿⠿⣿⣷⡄  
+⠙⠃   ⣼⣿⡟  ⠈⠻⣿⣿⣦⣌⡇⠻⣿⣿⣷⣿⣿⣿ ⣿⣿⡇⠄⠛⠻⢷⣄ 
+     ⢻⣿⣿⣄   ⠈⠻⣿⣿⣿⣷⣿⣿⣿⣿⣿⡟ ⠫⢿⣿⡆     
+      ⠻⣿⣿⣿⣿⣶⣶⣾⣿⣿⣿⣿⣿⣿⣿⣿⡟⢀⣀⣤⣾⡿⠃     
+END
