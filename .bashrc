@@ -18,8 +18,36 @@ alias df='df -H'               # human-readable sizes
 alias free='free -m'           # show sizes in MB
 alias more=less
 alias dotfiles='/usr/bin/git --git-dir=$HOME/dotfiles/ --work-tree=$HOME'
-alias cat="bat"
+alias cat='bat'
 alias nt='(alacritty --working-directory . &)'
+alias fh='history_search'
+
+# Search in bash history
+history_search()
+{
+	local c=$(history | awk '{for (i=2; i<NF; i++) printf $i " "; print $NF}' | fzf)
+	echo $c
+	echo -n $c | xclip -selection c
+}
+
+# Exit ranger and cd to last dir with Q
+ranger()
+{
+    local IFS=$'\t\n'
+    local tempfile="$(mktemp -t tmp.XXXXXX)"
+    local ranger_cmd=(
+        command
+        ranger
+        --cmd="map Q chain shell echo %d > "$tempfile"; quitall"
+    )
+    
+    ${ranger_cmd[@]} "$@"
+    if [[ -f "$tempfile" ]] && [[ "$(cat -- "$tempfile")" != "$(echo -n `pwd`)" ]]; then
+        cd -- "$(cat "$tempfile")" || return
+    fi
+    command rm -f -- "$tempfile" 2>/dev/null
+}
+
 
 # Add some paths to PATH
 PATH=$PATH:$HOME/.cargo/bin:$HOME/.local/bin
@@ -57,6 +85,9 @@ ex ()
 }
 
 # Ufetch
-sh ~/.config/ufetch/ufetch-arch
+# sh ~/.config/ufetch/ufetch-arch
+# Pfetch
+echo ''
+PF_INFO='ascii title os kernel uptime pkgs shell de' pfetch
 
 source ~/.config/broot/launcher/bash/br
