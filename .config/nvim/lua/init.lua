@@ -22,6 +22,8 @@ language_servers = {
 	rust_analyzer={},
 	hls={},
 	-- java_language_server={cmd = {'/usr/bin/java-language-server'}}
+	elmls={},
+	gdscript={},
 }
 
 setup_language_servers(language_servers)

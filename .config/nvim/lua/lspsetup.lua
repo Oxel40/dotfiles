@@ -7,13 +7,13 @@ local custom_lsp_attach = function(client)
 	local opts = { noremap=true }
 
 	-- See `:help nvim_buf_set_keymap()` for more information
-	vim.api.nvim_buf_set_keymap(0, 'n', 'K', '<cmd>lua vim.lsp.buf.hover()<CR>', opts)
+	vim.api.nvim_buf_set_keymap(0, 'n', 'K',     '<cmd>lua vim.lsp.buf.hover()<CR>', opts)
 	vim.api.nvim_buf_set_keymap(0, 'n', '<c-K>', '<cmd>lua vim.lsp.buf.definition()<CR>', opts)
-	vim.api.nvim_buf_set_keymap(0, 'n', 'E', '<cmd>lua vim.lsp.diagnostic.show_line_diagnostics()<CR>', opts)
-	vim.api.nvim_buf_set_keymap(0, 'n', 'F', '<cmd>lua vim.lsp.buf.formatting()<CR>', opts)
-	vim.api.nvim_buf_set_keymap(0, 'n', '<F2>', '<cmd>lua vim.lsp.buf.rename()<CR>', opts)
-	vim.api.nvim_buf_set_keymap(0, 'n', '[d', '<cmd>lua vim.lsp.diagnostic.goto_prev()<CR>', opts)
-	vim.api.nvim_buf_set_keymap(0, 'n', ']d', '<cmd>lua vim.lsp.diagnostic.goto_next()<CR>', opts)
+	vim.api.nvim_buf_set_keymap(0, 'n', 'E',     '<cmd>lua vim.diagnostic.open_float()<CR>', opts)
+	vim.api.nvim_buf_set_keymap(0, 'n', 'F',     '<cmd>lua vim.lsp.buf.formatting()<CR>', opts)
+	vim.api.nvim_buf_set_keymap(0, 'n', '<F2>',  '<cmd>lua vim.lsp.buf.rename()<CR>', opts)
+	vim.api.nvim_buf_set_keymap(0, 'n', '[d',    '<cmd>lua vim.diagnostic.goto_prev()<CR>', opts)
+	vim.api.nvim_buf_set_keymap(0, 'n', ']d',    '<cmd>lua vim.diagnostic.goto_next()<CR>', opts)
 
 	-- ... and other keymappings for LSP
 

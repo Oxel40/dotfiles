@@ -31,6 +31,9 @@ call lightline#lsp#register()
 set tabstop=4
 set shiftwidth=4
 set noexpandtab
+autocmd FileType haskell setlocal tabstop=2 shiftwidth=2 softtabstop=2 expandtab
+autocmd FileType elm setlocal tabstop=2 shiftwidth=2 softtabstop=2 expandtab
+
 " Disable tabline in dashboard and terminal
 let g:indent_blankline_bufname_exclude = ['dashboard', 'terminal']
 let g:indent_blankline_buftype_exclude = ['dashboard', 'terminal']
