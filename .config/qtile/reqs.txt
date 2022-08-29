@@ -1,0 +1,1 @@
+qtile feh xsecurelock picom rofi xss-lock xcb-util-cursor

@@ -1,3 +1,9 @@
+from libqtile.config import Key, Screen, Group, Drag, Click
+from libqtile.lazy import lazy
+from libqtile import layout, bar, widget
+from libqtile.widget import backlight
+from libqtile.widget import base
+
 from typing import List  # noqa: F401
 
 from libqtile import layout, bar, widget, hook
@@ -7,6 +13,12 @@ from libqtile.lazy import lazy
 import os
 import subprocess
 
+# Vars
+mod = 'mod4'
+my_terminal = 'alacritty'
+my_terminal_exec = '-e'
+# my_wallpaper = '/home/erikp/Pictures/Wallpapers/risk.png'
+my_wallpaper = '/home/erikp/Pictures/Wallpapers/wall.gif'
 
 @hook.subscribe.startup_once
 def autostart():
@@ -213,6 +225,7 @@ layout_theme = {
 layouts = [
     layout.Columns(**layout_theme),
     layout.Max(**layout_theme),
+    # layout.Stack(num_stacks=2, **layout_theme),
     # Try more layouts by unleashing below layouts.
     # layout.Stack(num_stacks=2),
     # layout.Bsp(),
