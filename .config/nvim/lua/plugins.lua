@@ -35,7 +35,23 @@ return require('packer').startup(function()
 
 	-- Dashboard
 	use 'glepnir/dashboard-nvim'
-	use 'junegunn/fzf.vim'
+	-- use 'junegunn/fzf.vim'
+	use {
+		'nvim-telescope/telescope.nvim',
+		requires = { {'nvim-lua/plenary.nvim'},
+		             {'kyazdani42/nvim-web-devicons'},
+					 {'nvim-telescope/telescope-fzf-native.nvim', run = 'make' }
+				   }
+	}
+	
+	use {
+		'sudormrfbin/cheatsheet.nvim',
+		requires = {
+			{'nvim-telescope/telescope.nvim'},
+			{'nvim-lua/popup.nvim'},
+			{'nvim-lua/plenary.nvim'},
+		}
+	}
 
 	-- Speedup neovim startup time
 	use 'nathom/filetype.nvim'
@@ -43,4 +59,17 @@ return require('packer').startup(function()
 	-- Startup time benchmark
 	use 'tweekmonster/startuptime.vim'
 
+	-- Smooth scroll
+	-- use 'karb94/neoscroll.nvim'
+
+	use 'ollykel/v-vim'
+
+	-- File tree
+	use {
+		'kyazdani42/nvim-tree.lua',
+		requires = {
+			'kyazdani42/nvim-web-devicons', -- optional, for file icons
+		},
+		tag = 'nightly' -- optional, updated every week. (see issue #1193)
+	}
 end)

@@ -56,10 +56,19 @@ PATH=$PATH:$HOME/.cargo/bin:$HOME/.local/bin
 # PS1='[\u@\h \W]\$ '
 # PS1='\[\033[01;32m\][\u@\h\[\033[01;37m\] \W\[\033[01;32m\]]\$\[\033[00m\] '
 # Custom PS1:
-PS1='\[\033[01;35m\] \W \$\[\033[00m\] '
+exitstatus()
+{
+	s=$?
+    if [[ $s != 0 ]]; then
+        echo "$s"
+    fi
+}
+PS1='\[\033[01;31m\]$(exitstatus)\[\033[01;35m\] \W \$\[\033[00m\] '
+PS2='\[\033[01;35m\]>\[\033[00m\] '
 
 # Autocompletion
 [ -r /usr/share/bash-completion/bash_completion ] && . /usr/share/bash-completion/bash_completion
+complete -cf doas
 
 # Shortcut for file extraction
 ex ()

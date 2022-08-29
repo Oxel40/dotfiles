@@ -14,16 +14,21 @@ require('colorizer').setup()
 require('nvim-treesitter.configs').setup({
 	highlight = {enable = true}
 })
+require('telescope').load_extension('fzf')
+-- require('neoscroll').setup()
+
+require("nvim-tree").setup()
 
 language_servers = {
 	clangd={},
 	pylsp={},
 	gopls={},
+	gdscript={},
 	rust_analyzer={},
 	hls={},
-	-- java_language_server={cmd = {'/usr/bin/java-language-server'}}
 	elmls={},
 	gdscript={},
+	java_language_server={cmd = {'/usr/bin/java-language-server'}}
 }
 
 setup_language_servers(language_servers)

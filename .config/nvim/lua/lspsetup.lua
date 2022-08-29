@@ -1,6 +1,14 @@
 local nvim_lsp = require('lspconfig')
 local coq = require('coq')
 
+function table.shallow_copy(t)
+  local t2 = {}
+  for k,v in pairs(t) do
+    t2[k] = v
+  end
+  return t2
+end
+
 -- Function for setting lsp related keybindings
 local custom_lsp_attach = function(client)
 	-- Options
@@ -31,7 +39,7 @@ end
 function setup_language_servers(server_list)
 	local server_opts = { on_attach = custom_lsp_attach }
 	for server, options in pairs(server_list) do
-		local _server_opts = server_opts
+		local _server_opts = table.shallow_copy(server_opts)
 		for k,v in pairs(options) do _server_opts[k] = v end
 		nvim_lsp[server].setup(_server_opts)
 		nvim_lsp[server].setup(coq.lsp_ensure_capabilities(_server_opts))

@@ -61,8 +61,10 @@ endif
 set mouse=nvi
 
 " Mouse scroll, TODO: more smothness
-map <ScrollWheelUp> <C-Y>
-map <ScrollWheelDown> <C-E>
+" map <ScrollWheelUp> <C-Y>
+" map <ScrollWheelDown> <C-E>
+map <ScrollWheelUp> <C-y>
+map <ScrollWheelDown> <C-e>
 
 " Navigation
 nnoremap ö }
@@ -111,7 +113,8 @@ let g:completion_matching_strategy_list = ['exact', 'substring', 'fuzzy']
 
 " Dashboard setup (and related key bindings)
 let g:mapleader="\<Space>"
-let g:dashboard_default_executive = 'fzf'
+" let g:dashboard_default_executive = 'fzf'
+let g:dashboard_default_executive = 'telescope'
 nmap <Leader>ss :<C-u>SessionSave<CR>
 nmap <Leader>sl :<C-u>SessionLoad<CR>
 nnoremap <silent> <Leader>fh :DashboardFindHistory<CR>

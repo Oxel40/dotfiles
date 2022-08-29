@@ -16,3 +16,9 @@ if command -v libinput-gestures &> /dev/null
 then
 	libinput-gestures &
 fi
+
+# USB disk automount
+udiskie &
+
+# Polkit auth. agent
+/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1 &
