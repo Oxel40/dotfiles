@@ -6,6 +6,11 @@ from libqtile.widget import base
 
 from typing import List  # noqa: F401
 
+from libqtile import layout, bar, widget, hook
+from libqtile.config import Key, Screen, Group, Drag, Click, Match
+from libqtile.lazy import lazy
+
+import os
 import subprocess
 
 # Vars
@@ -15,92 +20,184 @@ my_terminal_exec = '-e'
 # my_wallpaper = '/home/erikp/Pictures/Wallpapers/risk.png'
 my_wallpaper = '/home/erikp/Pictures/Wallpapers/wall.gif'
 
-# Start compositor
-subprocess.Popen(['picom'])
-
-# Start gestures
-subprocess.Popen(['libinput-gestures'])
-
-# Set background
-subprocess.Popen(['feh', '--bg-scale', my_wallpaper])
-
-# Start screenlocker
-subprocess.Popen(['xset', 's', '180', '5'])
-subprocess.Popen(
-    ['xss-lock', '-n', '/usr/lib/xsecurelock/dimmer', '-l', '--', 'xsecurelock'])
-
-# Start ssh-agent
-# subprocess.Popen(['eval', '$(ssh-agent)'])
+@hook.subscribe.startup_once
+def autostart():
+    sqript = os.path.expanduser('~/.config/qtile/autostart.sh')
+    subprocess.call(['bash', sqript])
 
 
-# Costom widgets to be used in the bar
-#
-# Screen Brightness
-class Brightness(base.InLoopPollText):
+def float_to_front(qtile):
+    """
+    Bring all floating windows of the group to front
+    """
+    for window in qtile.current_group.windows:
+        if window.floating:
+            window.cmd_bring_to_front()
 
-    def __init__(self, **config):
-        self.max_brightness = self.get_max_brightness()
-        base.InLoopPollText.__init__(self, **config)
 
-    def get_curent_brightness(self):
-        with open('/sys/class/backlight/intel_backlight/brightness', 'r') as f:
-            return int(f.read())
+def generate_bar(i):
+    """
+    Generate bottom bar depending on screen number
+    """
+    bar_layout = [
+        widget.CurrentLayoutIcon(
+               custom_icon_paths=[os.path.expanduser("~/.config/qtile/icons")],
+               scale=0.7,
+               ),
+        widget.GroupBox(
+            margin_y=4,
+            borderwidth=3,
+            rounded=True,
+            disable_drag=True,
+            highlight_method="line",
+            highlight_color=['2eb398', '2eb398'],
+            this_current_screen_border='2eb398',
+        ),
+        widget.Prompt(),
+        widget.WindowName(),
+    ]
 
-    def get_max_brightness(self):
-        with open('/sys/class/backlight/intel_backlight/max_brightness', 'r') as f:
-            return int(f.read())
+    # if it's the main monitor, add sys tray
+    if i == 0:
+        bar_layout.extend([
+            widget.Systray(),
+            widget.TextBox(
+                text="|"
+            ),
+        ])
 
-    def poll(self):
-        current_brightness = self.get_curent_brightness()
-        return "{}%".format(round(current_brightness * 100 / self.max_brightness))
+    # if we have a battery
+    if i == 0 and os.path.exists("/sys/class/power_supply/BAT0"):
+        bar_layout.extend([
+            widget.Battery(
+                format='Battery: {char} {percent:2.0%} {hour:d}:{min:02d}'
+            ),
+            widget.TextBox(
+                text="|"
+            ),
+        ])
+
+    # TODO backlight
+
+    # if it's the main monitor, add volume
+    if i == 0:
+        bar_layout.extend([
+            widget.Volume(
+                fmt='Volume: {}'
+            ),
+            widget.TextBox(
+                text="|"
+            ),
+        ])
+
+    bar_layout.append(
+        widget.Clock(format='%Y-%m-%d %H:%M')
+    )
+
+    out_bar = bar.Bar(bar_layout, 24)
+    return out_bar
+
+
+# Vars
+mod = 'mod4'
+my_terminal = 'alacritty'
+my_terminal_exec = '-e'
 
 
 keys = [
-    # Switch between windows in current stack pane
-    Key([mod], 'k', lazy.layout.down()),
-    Key([mod], 'j', lazy.layout.up()),
+    # Switch between windows
+    Key([mod], "h", lazy.layout.left(), desc="Move focus to left"),
+    Key([mod], "l", lazy.layout.right(), desc="Move focus to right"),
+    Key([mod], "j", lazy.layout.down(), desc="Move focus down"),
+    Key([mod], "k", lazy.layout.up(), desc="Move focus up"),
+    Key([mod], "space", lazy.layout.next(),
+        desc="Move window focus to other window"),
 
-    # Move windows up or down in current stack
-    Key([mod, 'control'], 'k', lazy.layout.shuffle_down()),
-    Key([mod, 'control'], 'j', lazy.layout.shuffle_up()),
+    # Move windows between left/right columns or move up/down in current stack.
+    # Moving out of range in Columns layout will create new column.
+    Key([mod, "shift"], "h", lazy.layout.shuffle_left(),
+        desc="Move window to the left"),
+    Key([mod, "shift"], "l", lazy.layout.shuffle_right(),
+        desc="Move window to the right"),
+    Key([mod, "shift"], "j", lazy.layout.shuffle_down(),
+        desc="Move window down"),
+    Key([mod, "shift"], "k", lazy.layout.shuffle_up(), desc="Move window up"),
 
-    # Switch window focus to other pane(s) of stack
-    Key([mod], 'space', lazy.layout.next()),
-
-    # Swap panes of split stack
-    Key([mod, 'shift'], 'space', lazy.layout.rotate()),
+    # Grow windows. If current window is on the edge of screen and direction
+    # will be to screen edge - window would shrink.
+    Key([mod, "control"], "h", lazy.layout.grow_left(),
+        desc="Grow window to the left"),
+    Key([mod, "control"], "l", lazy.layout.grow_right(),
+        desc="Grow window to the right"),
+    Key([mod, "control"], "j", lazy.layout.grow_down(),
+        desc="Grow window down"),
+    Key([mod, "control"], "k", lazy.layout.grow_up(), desc="Grow window up"),
+    Key([mod, "control"], "n", lazy.layout.normalize(), desc="Reset all window sizes"),
 
     # Toggle between split and unsplit sides of stack.
     # Split = all windows displayed
     # Unsplit = 1 window displayed, like Max layout, but still with
     # multiple stack panes
-    Key([mod, 'shift'], 'Return', lazy.layout.toggle_split()),
-    Key([mod], 'Return', lazy.spawn(my_terminal)),
+    Key([mod, "shift"], "Return", lazy.layout.toggle_split(),
+        desc="Toggle between split and unsplit sides of stack"),
+    # Launch terminal
+    Key([mod], "Return", lazy.spawn(my_terminal), desc="Launch terminal"),
 
     # Toggle between different layouts as defined below
-    Key([mod], 'Tab', lazy.next_layout()),
-    Key([mod], 'w', lazy.window.kill()),
-    Key([mod], 'x', lazy.window.kill()),
+    Key([mod], "Tab", lazy.next_layout(), desc="Toggle between layouts"),
+    Key([mod], "w", lazy.window.kill(), desc="Kill focused window"),
 
-    Key([mod, 'control'], 'r', lazy.restart()),
-    Key([mod, 'control'], 'q', lazy.shutdown()),
-    Key([mod], 'r', lazy.spawncmd()),
+    Key([mod, "control"], "d", lazy.spawn('light-locker-command -l')),
+    Key([mod, "control"], "r", lazy.restart(), desc="Restart Qtile"),
+    Key([mod, "control"], "q", lazy.shutdown(), desc="Shutdown Qtile"),
+    Key([mod], "r", lazy.spawncmd(),
+        desc="Spawn a command using a prompt widget"),
 
-    # Custom keybindings
-    Key([mod, 'control'], 'Return', lazy.layout.client_to_next()),
+    # Toggle fullscreen
+    Key([mod, 'mod1'], 'Return', lazy.window.toggle_fullscreen()),
+    # Handle minimize/maximize
+    Key([mod, 'mod1'], 'comma', lazy.window.toggle_minimize()),
+    Key([mod, 'mod1'], 'period', lazy.window.toggle_minimize()),
 
-    Key([mod, 'control'], 'l', lazy.spawn('xsecurelock')),
+    # Bring floatig windows to front
+    Key([mod, 'mod1'], 'f', lazy.function(float_to_front)),
+
+    # Rofi bindings
     Key([mod], 'd', lazy.spawn('rofi -show run')),
     Key([mod], 'f', lazy.spawn('rofi -show window')),
 
+    # Audio controlls
     Key([], 'XF86AudioMute', lazy.spawn('amixer -q set Master toggle')),
     Key([], 'XF86AudioLowerVolume', lazy.spawn('amixer sset Master 5%- unmute')),
     Key([], 'XF86AudioRaiseVolume', lazy.spawn('amixer sset Master 5%+ unmute')),
 
+    # Brightness controlls
     Key([], 'XF86MonBrightnessUp', lazy.spawn(
         'bash -c "if [[ 1 -eq $(echo \\"$(xbacklight -get) < 5\\" | bc) ]]; then xbacklight -set 5; else xbacklight -inc 5; fi"')),
     Key([], 'XF86MonBrightnessDown', lazy.spawn(
         'bash -c "if [[ 1 -eq $(echo \\"$(xbacklight -get) <= 5\\" | bc) ]]; then xbacklight -set 1; else xbacklight -dec 5; fi"')),
+
+    # Monitor focus keys
+    Key([mod], "1",
+        lazy.to_screen(0),
+        desc='Keyboard focus to monitor 1'
+        ),
+    Key([mod], "2",
+        lazy.to_screen(1),
+        desc='Keyboard focus to monitor 2'
+        ),
+    # Switch monitor focus
+    # TODO
+    # Key(["mod1"], "Tab",
+    #     lazy.next_screen(),
+    #     desc='Move focus to next monitor'
+    #     ),
+
+    # Switch to previous group
+    Key(["mod1"], "Tab",
+        lazy.screen.toggle_group(),
+        desc='Switch to previous group'
+        ),
 ]
 
 groups = [Group(i) for i in 'uiop']
@@ -120,17 +217,18 @@ for i in groups:
 
 layout_theme = {
     "border_width": 2,
-    # "margin": 4,
-    "border_focus": "#8fbcbb",
-    "border_normal": "#1D2330",
+    "margin": 8,
+    "border_focus": "8fbcbb",
+    "border_normal": "181c24",
 }
 
 layouts = [
+    layout.Columns(**layout_theme),
     layout.Max(**layout_theme),
     # layout.Stack(num_stacks=2, **layout_theme),
     # Try more layouts by unleashing below layouts.
+    # layout.Stack(num_stacks=2),
     # layout.Bsp(),
-    # layout.Columns(),
     # layout.Matrix(),
     layout.MonadTall(**layout_theme),
     # layout.MonadWide(),
@@ -139,66 +237,25 @@ layouts = [
     # layout.TreeTab(),
     # layout.VerticalTile(),
     # layout.Zoomy(),
+    layout.Floating(**layout_theme),
 ]
 
 widget_defaults = dict(
     font='sans',
     fontsize=14,
     padding=5,
-    background='141a1b',  # #141a1b
+    # background='21252b',
+    background='181c24',
 )
 extension_defaults = widget_defaults.copy()
 
 screens = [
     Screen(
-        bottom=bar.Bar(
-            [
-                widget.CurrentLayout(),
-                widget.GroupBox(
-                    margin_y=4,
-                    borderwidth=3,
-                    rounded=True,
-                    highlight_method="line",
-                    highlight_color=['2eb398', '2eb398'],
-                    this_current_screen_border='2eb398',  # #2eb398
-                    disable_drag=True,
-                ),
-                widget.Prompt(),
-                widget.WindowName(),
-
-                widget.Systray(),
-                widget.CheckUpdates(
-                    fmt='| {}',
-                    mouse_callbacks={'Button1': lambda qtile: lazy.spawn(
-                        my_terminal + ' ' + my_terminal_exec + ' sudo pacman -Syyu && echo "Press enter to exit..." && read')}
-                ),
-                widget.TextBox(
-                    text="|"
-                ),
-                widget.Battery(
-                    format='Battery: {char} {percent:2.0%} {hour:d}:{min:02d}'
-                ),
-                widget.TextBox(
-                    text="|"
-                ),
-                widget.Volume(
-                    fmt='Volume: {}'
-                ),
-                widget.TextBox(
-                    text="|"
-                ),
-                Brightness(
-                    update_interval=1,
-                    fmt='Brightness: {}'
-                ),
-                widget.TextBox(
-                    text="|"
-                ),
-                widget.Clock(format='%Y-%m-%d %H:%M'),
-            ],
-            24,
-        ),
+        bottom=generate_bar(0)
     ),
+    Screen(
+        bottom=generate_bar(1)
+    )
 ]
 
 # Drag floating layouts.
@@ -213,32 +270,22 @@ mouse = [
 
 dgroups_key_binder = None
 dgroups_app_rules = []  # type: List
-main = None
+main = None  # WARNING: this is deprecated and will be removed soon
 follow_mouse_focus = True
 bring_front_click = False
 cursor_warp = False
-floating_layout = layout.Floating(
-    float_rules=[
-        # Run the utility of `xprop` to see the wm class and name of an X client.
-        {'wmclass': 'confirm'},
-        {'wmclass': 'dialog'},
-        {'wmclass': 'download'},
-        {'wmclass': 'error'},
-        {'wmclass': 'file_progress'},
-        {'wmclass': 'notification'},
-        {'wmclass': 'splash'},
-        {'wmclass': 'toolbar'},
-        {'wmclass': 'confirmreset'},  # gitk
-        {'wmclass': 'makebranch'},  # gitk
-        {'wmclass': 'maketag'},  # gitk
-        {'wname': 'branchdialog'},  # gitk
-        {'wname': 'pinentry'},  # GPG key password entry
-        {'wmclass': 'ssh-askpass'},  # ssh-askpass
-    ],
-    **layout_theme
-)
+floating_layout = layout.Floating(float_rules=[
+    # Run the utility of `xprop` to see the wm class and name of an X client.
+    *layout.Floating.default_float_rules,
+    Match(wm_class='confirmreset'),  # gitk
+    Match(wm_class='makebranch'),  # gitk
+    Match(wm_class='maketag'),  # gitk
+    Match(wm_class='ssh-askpass'),  # ssh-askpass
+    Match(title='branchdialog'),  # gitk
+    Match(title='pinentry'),  # GPG key password entry
+])
 auto_fullscreen = True
-focus_on_window_activation = 'smart'
+focus_on_window_activation = "smart"
 
 # XXX: Gasp! We're lying here. In fact, nobody really uses or cares about this
 # string besides java UI toolkits; you can see several discussions on the
@@ -248,4 +295,4 @@ focus_on_window_activation = 'smart'
 #
 # We choose LG3D to maximize irony: it is a 3D non-reparenting WM written in
 # java that happens to be on java's whitelist.
-wmname = 'LG3D'
+wmname = "LG3D"
