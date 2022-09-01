@@ -8,6 +8,7 @@
 # Color aliases
 ## old: alias ls='ls --color=auto'
 alias ls="exa -l"
+alias lss="command ls"
 alias grep='grep --colour=auto'
 alias egrep='egrep --colour=auto'
 alias fgrep='fgrep --colour=auto'
@@ -21,6 +22,7 @@ alias dotfiles='/usr/bin/git --git-dir=$HOME/dotfiles/ --work-tree=$HOME'
 alias cat='bat'
 alias nt='(alacritty --working-directory . &)'
 alias fh='history_search'
+alias nv='neovide'
 
 # Search in bash history
 history_search()
