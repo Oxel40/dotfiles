@@ -6,4 +6,5 @@ alias dotfiles='/usr/bin/git --git-dir=$HOME/dotfiles/ --work-tree=$HOME' (add t
 dotfiles config --local status.showUntrackedFiles no
 
 dotfiles update-index --skip-worktree .config/alacritty/local.yml
+dotfiles update-index --skip-worktree .config/nvim/local.vim
 ```
