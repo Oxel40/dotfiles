@@ -62,6 +62,7 @@ return require('packer').startup(function()
 	-- Smooth scroll
 	-- use 'karb94/neoscroll.nvim'
 
+	-- V lang integration
 	use 'ollykel/v-vim'
 
 	-- File tree
@@ -72,4 +73,11 @@ return require('packer').startup(function()
 		},
 		tag = 'nightly' -- optional, updated every week. (see issue #1193)
 	}
+
+	-- Zen mode
+	use 'folke/zen-mode.nvim'
+
+	-- Grammar check
+	use 'rhysd/vim-grammarous'
+
 end)

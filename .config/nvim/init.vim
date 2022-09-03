@@ -93,6 +93,11 @@ command SV setlocal spelllang=sv <bar> SpellSetup
 command EN setlocal spelllang=en <bar> SpellSetup
 command Nospell setlocal nospell <bar> setlocal nowrap <bar> execute 'unmap <buffer> j' <bar> execute 'unmap <buffer> k'
 
+" Grammar check
+let g:grammarous#default_comments_only_filetypes = {
+            \ '*' : 1, 'help' : 0, 'markdown' : 0,
+            \ }
+
 " Default wraping behavior
 set nowrap
 
