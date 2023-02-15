@@ -52,7 +52,13 @@ ranger()
 
 
 # Add some paths to PATH
-PATH=$PATH:$HOME/.cargo/bin:$HOME/.local/bin
+PATH="$PATH:$HOME/.cargo/bin"
+PATH="$PATH:$HOME/.local/bin"
+PATH="$PATH:$HOME/.fly/bin"
+
+# Some exports
+FLYCTL_INSTALL="/home/erik/.fly"
+DOCKER_HOST="unix://$XDG_RUNTIME_DIR/docker.sock"
 
 # Standard PS1:
 # PS1='[\u@\h \W]\$ '
@@ -101,4 +107,22 @@ ex ()
 echo ''
 PF_INFO='ascii title os kernel uptime pkgs shell de' pfetch
 
-source ~/.config/broot/launcher/bash/br
+conda_init ()
+{
+# >>> conda initialize >>>
+# !! Contents within this block are managed by 'conda init' !!
+__conda_setup="$('/home/erik/.miniconda3/bin/conda' 'shell.bash' 'hook' 2> /dev/null)"
+if [ $? -eq 0 ]; then
+    eval "$__conda_setup"
+else
+    if [ -f "/home/erik/.miniconda3/etc/profile.d/conda.sh" ]; then
+        . "/home/erik/.miniconda3/etc/profile.d/conda.sh"
+    else
+        export PATH="/home/erik/.miniconda3/bin:$PATH"
+    fi
+fi
+unset __conda_setup
+# <<< conda initialize <<<
+}
+
+source /home/erik/.config/broot/launcher/bash/br
