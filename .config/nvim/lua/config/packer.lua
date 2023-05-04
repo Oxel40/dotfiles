@@ -102,6 +102,9 @@ return require('packer').startup(function(use)
 	-- Movement
 	use 'easymotion/vim-easymotion'
 
+	-- GitHub Copilot
+	use 'github/copilot.vim'
+
 	-- Automatically set up your configuration after cloning packer.nvim
 	-- Put this at the end after all plugins
 	if packer_bootstrap then

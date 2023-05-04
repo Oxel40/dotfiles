@@ -7,7 +7,8 @@ nitrogen --restore &
 dunst &
 
 # Start screenlocker
-light-locker &
+#light-locker &
+xss-lock xsecurelock
 
 # Mouse acceleration
 # xinput --set-prop 'pointer:Razer Razer DeathAdder 2013' 'libinput Accel Profile Enabled' {0, 1}

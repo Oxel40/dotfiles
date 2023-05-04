@@ -55,6 +55,7 @@ ranger()
 PATH="$PATH:$HOME/.cargo/bin"
 PATH="$PATH:$HOME/.local/bin"
 PATH="$PATH:$HOME/.fly/bin"
+PATH="$PATH:$HOME/.nix-profile/bin"
 
 # Some exports
 FLYCTL_INSTALL="/home/erik/.fly"
@@ -126,3 +127,5 @@ unset __conda_setup
 }
 
 source /home/erik/.config/broot/launcher/bash/br
+
+[ -f "/home/erik/.ghcup/env" ] && source "/home/erik/.ghcup/env" # ghcup-env
