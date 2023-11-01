@@ -1,12 +1,13 @@
 -- Leader
 vim.g.mapleader = ' '
+vim.g.maplocalleader = ','
 
 -- File exporer
 vim.keymap.set('n', '<leader>pv', vim.cmd.Ex)
 
 -- Mouse scroll
-vim.keymap.set('', '<ScrollWheelUp>', '<C-y>')
-vim.keymap.set('', '<ScrollWheelDown>', '<C-e>')
+-- vim.keymap.set('', '<ScrollWheelUp>', '<C-y>')
+-- vim.keymap.set('', '<ScrollWheelDown>', '<C-e>')
 
 -- Navigation
 vim.keymap.set('n', 'ö', '}')

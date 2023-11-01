@@ -1,6 +1,12 @@
-require("indent_blankline").setup {
-	show_current_context = true,
+require("ibl").setup {
+	-- show_current_context = true,
+	--scope = {
+	--	enabled = true,
+	--},
+
+	-- Disable tabline terminal
+	--exclude = {
+	--	buftypes = { 'terminal' }
+	--}
 }
 
--- Disable tabline terminal
-vim.g.indent_blankline_bufname_exclude = { 'terminal' }

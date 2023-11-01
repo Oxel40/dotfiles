@@ -20,3 +20,13 @@ vim.api.nvim_create_user_command(
 	"setlocal nospell <bar> setlocal nowrap <bar> execute 'unmap <buffer> j' <bar> execute 'unmap <buffer> k'",
 	{}
 )
+vim.api.nvim_create_user_command(
+	'Line80',
+	'set colorcolumn=80',
+	{}
+)
+vim.api.nvim_create_user_command(
+	'Line0',
+	'set colorcolumn=0',
+	{}
+)
