@@ -56,6 +56,7 @@ PATH="$PATH:$HOME/.cargo/bin"
 PATH="$PATH:$HOME/.local/bin"
 PATH="$PATH:$HOME/.fly/bin"
 PATH="$PATH:$HOME/.nix-profile/bin"
+PATH="$PATH:$HOME/go/bin"
 
 # Some exports
 FLYCTL_INSTALL="/home/erik/.fly"
