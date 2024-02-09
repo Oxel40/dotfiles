@@ -11,7 +11,7 @@
         // "cpu",
         // "memory",
         // "custom/weather",
-        "wlr/workspaces"
+        "hyprland/workspaces"
     ],
     "modules-center": ["hyprland/window"],
     "modules-right": [
@@ -44,7 +44,10 @@
             "urgent": "",
             "active": "",
             "default": ""
-          }
+        },
+		"persistent-workspaces": {
+        	"*": 4
+    	}
     },
     // "cpu": {
     //     "interval": 10,
