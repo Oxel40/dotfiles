@@ -26,3 +26,7 @@ vim.keymap.set('n', 'T', ':tabnew<CR>')
 
 -- Terminal (exit insert mode)
 vim.keymap.set('t', 'jk', '<C-\\><C-n>')
+
+-- Indentation in visual mode
+vim.keymap.set('v', '>', '>gv')
+vim.keymap.set('v', '<', '<gv')

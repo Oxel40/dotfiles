@@ -105,19 +105,6 @@ return require('packer').startup(function(use)
 	-- GitHub Copilot
 	--use 'github/copilot.vim'
 
-	-- Clojure stuff (Conjure and Parinfer)
-	use {
-		'Olical/conjure',
-		requires = {
-			{ 'tpope/vim-dispatch' },
-			{ 'clojure-vim/vim-jack-in' },
-		}
-	}
-	use {
-		'eraserhd/parinfer-rust',
-		run = 'cargo build --release'
-	}
-
 	-- Automatically set up your configuration after cloning packer.nvim
 	-- Put this at the end after all plugins
 	if packer_bootstrap then
