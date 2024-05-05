@@ -24,16 +24,22 @@ tooltip {
 
 #workspaces button {
     padding: 5px;
-    color: #313244;
+    color: #717ca7;
     margin-right: 5px;
 }
 
+#workspaces button.empty {
+    color: #313244;
+}
+
 #workspaces button.active {
-    color: #a6adc8;
+    /*color: #a6adc8;*/
+    /* color: #b0b6ce; */
+    color: #cdd6f4;
 }
 
 #workspaces button.focused {
-    color: #a6adc8;
+	color: #a6adc8;
     background: #eba0ac;
     border-radius: 10px;
 }
