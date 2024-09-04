@@ -1,5 +1,6 @@
 require('config.remap')
-require('config.packer')
+require('config.lazy')
 require('config.set')
 require('config.autocmd')
 require('config.cmd')
+require('config.neovide')
