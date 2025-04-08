@@ -5,6 +5,20 @@
 # If not running interactively, don't do anything
 [[ $- != *i* ]] && return
 
+# If running inside of a container (distrobox), only set PS
+if [[ "$CONTAINER_ID" != "" ]]; then
+	exitstatus()
+	{
+		s=$?
+		if [[ $s != 0 ]]; then
+			echo " $s"
+		fi
+	}
+	PS1=' [$CONTAINER_ID]\[\033[01;31m\]$(exitstatus)\[\033[01;35m\] \W \$\[\033[00m\] '
+	PS2='\[\033[01;35m\]>\[\033[00m\] '
+	return
+fi
+
 # Color aliases
 ## old: alias ls='ls --color=auto'
 alias ls="exa -l"
@@ -24,6 +38,16 @@ alias nt='(alacritty --working-directory . &)'
 alias fh='history_search'
 alias nv='neovide'
 
+# Git aliases
+alias ga="git add"
+alias gc="git commit"
+alias gd="git diff"
+alias gl="git log"
+alias gp="git pull"
+alias gpush="git push"
+alias gs="git status"
+alias gsb="git switch"
+
 # Search in bash history
 history_search()
 {
@@ -31,6 +55,7 @@ history_search()
 	echo $c
 	echo -n $c | xclip -selection c
 }
+eval "$(fzf --bash)"
 
 # Exit ranger and cd to last dir with Q
 ranger()
@@ -111,6 +136,7 @@ PF_INFO='ascii title os kernel uptime pkgs shell de' pfetch
 
 conda_init ()
 {
+export CRYPTOGRAPHY_OPENSSL_NO_LEGACY=1
 # >>> conda initialize >>>
 # !! Contents within this block are managed by 'conda init' !!
 __conda_setup="$('/home/erik/.miniconda3/bin/conda' 'shell.bash' 'hook' 2> /dev/null)"
@@ -124,6 +150,7 @@ else
     fi
 fi
 unset __conda_setup
+[ -f /opt/miniconda3/etc/profile.d/conda.sh ] && source /opt/miniconda3/etc/profile.d/conda.sh
 # <<< conda initialize <<<
 }
 
@@ -132,3 +159,9 @@ source /home/erik/.config/broot/launcher/bash/br
 if [ -f "/home/erik/.ghcup/env" ]; then
 	source "/home/erik/.ghcup/env" # ghcup-env
 fi
+
+# The next line updates PATH for the Google Cloud SDK.
+if [ -f '/home/erik/Downloads/google-cloud-sdk/path.bash.inc' ]; then . '/home/erik/Downloads/google-cloud-sdk/path.bash.inc'; fi
+
+# The next line enables shell command completion for gcloud.
+if [ -f '/home/erik/Downloads/google-cloud-sdk/completion.bash.inc' ]; then . '/home/erik/Downloads/google-cloud-sdk/completion.bash.inc'; fi
