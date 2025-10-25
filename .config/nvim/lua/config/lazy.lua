@@ -275,7 +275,7 @@ require('lazy').setup({
 	'easymotion/vim-easymotion',
 
 	-- GitHub Copilot
-	'github/copilot.vim'
+	--'github/copilot.vim'
 },
 vim.diagnostic.config {
   virtual_text = true,
