@@ -127,9 +127,9 @@ tooltip {
 
 #network {
     color: #f9e2af;
+    border-radius: 0 10px 10px 0;
+    margin-right: 10px;
     border-left: 0px;
-    border-right: 0px;
-    border-radius: 10px 0px 0px 10px;
 }
 
 #pulseaudio {
@@ -148,13 +148,13 @@ tooltip {
     color: #89b4fa;
     border-left: 0px;
     border-right: 0px;
+    border-radius: 10px 0px 0px 10px;
 }
 
 #battery {
     color: #a6e3a1;
-    border-radius: 0 10px 10px 0;
-    margin-right: 10px;
     border-left: 0px;
+    border-right: 0px;
 }
 
 #custom-weather {

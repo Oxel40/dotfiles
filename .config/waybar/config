@@ -20,10 +20,10 @@
         // "custom/language",
         // "pulseaudio",
         // "pulseaudio#microphone",
-		"network",
-		"backlight",
         "wireplumber",
-		"battery"
+		"battery",
+		"backlight",
+		"network"
     ],
 
     "hyprland/window": {
@@ -131,7 +131,8 @@
 	},
 	"network": {
 		"format": "{essid}",
-		"format-disconnected": "..."
+		"format-disconnected": "...",
+		"on-click": "wifi-manager --toggle"
 	}
 }
 
