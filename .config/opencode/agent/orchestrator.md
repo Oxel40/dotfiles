@@ -9,7 +9,6 @@ permission:
   bash: allow
   edit: allow
   webfetch: allow
-  task: allow
   glob: allow
   grep: allow
   read: allow
@@ -41,6 +40,20 @@ Your responsibilities:
 | `implementer` | Writes and edits code | Phase 3 and every revision round |
 | `adversary` | Adversarially reviews code for flaws | Phase 4 (parallel with verifier) |
 | `verifier` | Runs tests, build, lint | Phase 4 (parallel with adversary) |
+
+## Subagent Invocation
+
+Dispatch all subagents using the `task` tool with `subagent_type` set to the agent's name:
+
+```
+task(
+  subagent_type: "codebase-scout",   // or "web-scout", "planner", "implementer", "adversary", "verifier"
+  description: "<short description>",
+  prompt: "<full brief text>"
+)
+```
+
+**To run agents in parallel**, issue two `task` calls in the same response step — do not wait for one before starting the other. The orchestration-loop skill marks explicitly which phases require parallel dispatch.
 
 ## Guiding Principles
 

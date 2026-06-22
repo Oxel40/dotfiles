@@ -26,7 +26,9 @@ You will receive:
 
 ## Command Detection
 
-If the Codebase Report includes test/build commands, use them. If not, detect them yourself using this priority order:
+**If a Codebase Report was provided and its `### Test & Build Commands` section contains detected commands, use those exactly — do not re-detect.** Only run your own detection if the Codebase Report is absent or every command is listed as `NOT DETECTED`.
+
+If detection is needed, use this priority order:
 
 ### For test command:
 1. `package.json` → `scripts.test`

@@ -44,7 +44,7 @@ Priority order — use the first that resolves:
 6. `build.gradle` → `./gradlew test`
 7. `.github/workflows/` → inspect CI config for the test step
 
-Report ALL discovered commands. Mark which one is the primary test command.
+Report ALL discovered commands. Mark which one is the primary test command. If a command cannot be determined, write `NOT DETECTED` — never leave a field blank or omit it.
 
 ### 3. Project Structure
 - Top-level directory layout
@@ -82,10 +82,10 @@ Return a structured **Codebase Report** with these exact sections:
 - Runtime: ...
 
 ### Test & Build Commands
-- Primary test command: `...`
-- Build command: `...`
-- Lint command: `...` (or: not detected)
-- Other: `...`
+- Primary test command: `...` (or: `NOT DETECTED`)
+- Build command: `...` (or: `NOT DETECTED`)
+- Lint command: `...` (or: `NOT DETECTED`)
+- Other: `...` (or: none)
 
 ### Project Structure
 <concise directory tree of relevant parts>
