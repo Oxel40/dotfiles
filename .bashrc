@@ -5,17 +5,9 @@
 # If not running interactively, don't do anything
 [[ $- != *i* ]] && return
 
-# If running inside of a container (distrobox), only set PS
+# If running inside of a container (distrobox), only load common
 if [[ "$CONTAINER_ID" != "" ]]; then
-	exitstatus()
-	{
-		s=$?
-		if [[ $s != 0 ]]; then
-			echo " $s"
-		fi
-	}
-	PS1=' [$CONTAINER_ID]\[\033[01;31m\]$(exitstatus)\[\033[01;35m\] \W \$\[\033[00m\] '
-	PS2='\[\033[01;35m\]>\[\033[00m\] '
+	. "$HOME/.config/shell/common"
 	return
 fi
 
@@ -23,31 +15,14 @@ fi
 ## old: alias ls='ls --color=auto'
 alias ls="exa -l"
 alias lss="command ls"
-alias grep='grep --colour=auto'
-alias egrep='egrep --colour=auto'
-alias fgrep='fgrep --colour=auto'
 
 # Other nice aliases
-alias cp="cp -i"               # confirm before overwriting something
-alias df='df -H'               # human-readable sizes
 alias free='free -m'           # show sizes in MB
 alias more=less
-alias dotfiles='/usr/bin/git --git-dir=$HOME/dotfiles/ --work-tree=$HOME'
 alias cat='bat'
 alias nt='(alacritty --working-directory . &)'
 alias fh='history_search'
 alias nv='neovide --fork'
-alias k='kubectl'
-
-# Git aliases
-alias ga="git add"
-alias gc="git commit"
-alias gd="git diff"
-alias gl="git log"
-alias gp="git pull"
-alias gpush="git push"
-alias gs="git status"
-alias gsb="git switch"
 
 # Search in bash history
 history_search()
@@ -56,7 +31,6 @@ history_search()
 	echo $c
 	echo -n $c | xclip -selection c
 }
-eval "$(fzf --bash)"
 
 # Exit ranger and cd to last dir with Q
 ranger()
@@ -88,50 +62,10 @@ export PATH="$PATH:/opt/rocm/bin"
 # Some exports
 export FLYCTL_INSTALL="/home/erik/.fly"
 # DOCKER_HOST="unix://$XDG_RUNTIME_DIR/docker.sock"
-export SSH_AUTH_SOCK="$HOME/.1password/agent.sock"
-
-# Standard PS1:
-# PS1='[\u@\h \W]\$ '
-# PS1='\[\033[01;32m\][\u@\h\[\033[01;37m\] \W\[\033[01;32m\]]\$\[\033[00m\] '
-# Custom PS1:
-exitstatus()
-{
-	s=$?
-    if [[ $s != 0 ]]; then
-        echo "$s"
-    fi
-}
-PS1='\[\033[01;31m\]$(exitstatus)\[\033[01;35m\] \W \$\[\033[00m\] '
-PS2='\[\033[01;35m\]>\[\033[00m\] '
 
 # Autocompletion
 [ -r /usr/share/bash-completion/bash_completion ] && . /usr/share/bash-completion/bash_completion
 complete -cf doas
-source <(kubectl completion bash)
-complete -o default -F __start_kubectl k
-
-# Shortcut for file extraction
-ex ()
-{
-	if [ -f $1 ] ; then
-		case $1 in
-			*.tar.bz2)   tar xjf $1   ;;
-			*.tar.gz)    tar xzf $1   ;;
-			*.bz2)       bunzip2 $1   ;;
-			*.rar)       unrar x $1   ;;
-			*.gz)        gunzip $1    ;;
-			*.tar)       tar xf $1    ;;
-			*.tbz2)      tar xjf $1   ;;
-			*.tgz)       tar xzf $1   ;;
-			*.zip)       unzip $1     ;;
-			*.Z)         uncompress $1;;
-			*.7z)        7z x $1      ;;
-			*)           echo "'$1' cannot be extracted via ex()" ;;
-		esac
-	else
-		echo "'$1' is not a valid file"
-	fi
-}
 
 # Ufetch
 # sh ~/.config/ufetch/ufetch-arch
@@ -170,4 +104,4 @@ if [ -f '/home/erik/Downloads/google-cloud-sdk/path.bash.inc' ]; then . '/home/e
 if [ -f '/home/erik/Downloads/google-cloud-sdk/completion.bash.inc' ]; then . '/home/erik/Downloads/google-cloud-sdk/completion.bash.inc'; fi
 export PATH="$HOME/.npm-global/bin:$PATH"
 
-source .config/shell/common
+. "$HOME/.config/shell/common"

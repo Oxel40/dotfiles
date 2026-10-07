@@ -13,6 +13,11 @@ alias ga="git add"
 alias gpush="git push"
 alias gpushf="git push --force-with-lease"
 
+alias cp="cp -i"               # confirm before overwriting something
+alias df='df -H'               # human-readable sizes
+alias grep='grep --colour=auto'
+alias k='kubectl'
+
 alias yolo-opencode='guard opencode --auto'
 alias yolo='guard pi'
 alias ask='guard --readonly pi'
@@ -20,6 +25,79 @@ alias proofread='pi --model github-copilot/gpt-5.6-luna --thinking medium --no-t
 alias tmp='cd $(mktemp -d)'
 
 export PATH="$HOME/.config/bin:$PATH"
+
+if [ -S "$HOME/.1password/agent.sock" ]; then
+    export SSH_AUTH_SOCK="$HOME/.1password/agent.sock"
+fi
+
+# Shortcut for file extraction
+ex()
+{
+    if [ -f "$1" ]; then
+        case "$1" in
+            *.tar.bz2)   tar xjf "$1"   ;;
+            *.tar.gz)    tar xzf "$1"   ;;
+            *.bz2)       bunzip2 "$1"   ;;
+            *.rar)       unrar x "$1"   ;;
+            *.gz)        gunzip "$1"    ;;
+            *.tar)       tar xf "$1"    ;;
+            *.tbz2)      tar xjf "$1"   ;;
+            *.tgz)       tar xzf "$1"   ;;
+            *.zip)       unzip "$1"     ;;
+            *.Z)         uncompress "$1";;
+            *.7z)        7z x "$1"      ;;
+            *)           echo "'$1' cannot be extracted via ex()" ;;
+        esac
+    else
+        echo "'$1' is not a valid file"
+    fi
+}
+
+# Shell specific: prompt, fzf keybindings and completion
+if [ -n "$BASH_VERSION" ]; then
+    __exitstatus()
+    {
+        __s=$?
+        if [ "$__s" != 0 ]; then
+            echo "${CONTAINER_ID:+ }$__s"
+        fi
+    }
+    PS1="${CONTAINER_ID:+ [$CONTAINER_ID]}"'\[\033[01;31m\]$(__exitstatus)\[\033[01;35m\] \W \$\[\033[00m\] '
+    PS2='\[\033[01;35m\]>\[\033[00m\] '
+
+    command -v fzf >/dev/null 2>&1 && eval "$(fzf --bash)"
+    if command -v kubectl >/dev/null 2>&1; then
+        eval "$(kubectl completion bash)"
+        complete -o default -F __start_kubectl k
+    fi
+
+    # Complete the dotfiles alias with git's completion, run against the bare repo
+    if ! declare -F __git_func_wrap >/dev/null; then
+        for __f in /usr/share/bash-completion/completions/git /usr/share/git/completion/git-completion.bash; do
+            [ -r "$__f" ] && . "$__f" && break
+        done
+        unset __f
+    fi
+    if declare -F __git_func_wrap >/dev/null; then
+        __dotfiles_complete()
+        {
+            local -x GIT_DIR="$HOME/dotfiles" GIT_WORK_TREE="$HOME"
+            __git_func_wrap __git_main
+        }
+        complete -o bashdefault -o default -o nospace -F __dotfiles_complete dotfiles
+    fi
+elif [ -n "$ZSH_VERSION" ]; then
+    PROMPT="${CONTAINER_ID:+ [$CONTAINER_ID]}%B%F{red}%(?..${CONTAINER_ID:+ }%?)%F{magenta} %1~ %(!.#.\$)%f%b "
+    PROMPT2='%B%F{magenta}>%f%b '
+
+    # The dotfiles alias completes as git, since zsh expands aliases when completing
+    command -v compdef >/dev/null 2>&1 || { autoload -Uz compinit && compinit; }
+
+    command -v fzf >/dev/null 2>&1 && eval "$(fzf --zsh)"
+    if command -v kubectl >/dev/null 2>&1; then
+        eval "$(kubectl completion zsh)"
+    fi
+fi
 
 if command -v pfetch >/dev/null 2>&1; then
     echo ''
