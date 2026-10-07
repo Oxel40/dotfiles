@@ -38,6 +38,9 @@
         },
         "unsloth/Qwen3.6-35B-A3B-MTP-GGUF:UD-Q4_K_M": {
           "name": "Qwen3.6-35B-A3B"
+        },
+        "unsloth/Qwen3.8-27B-GGUF:UD-IQ4_XS": {
+          "name": "Qwen3.8-27B"
         }
       },
       "name": "llama.cpp",
@@ -46,5 +49,6 @@
         "baseURL": "http://127.0.0.1:8080/v1"
       }
     }
-  }
+  },
+  "plugin": ["@dietrichgebert/ponytail"]
 }

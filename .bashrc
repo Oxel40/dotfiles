@@ -36,7 +36,8 @@ alias dotfiles='/usr/bin/git --git-dir=$HOME/dotfiles/ --work-tree=$HOME'
 alias cat='bat'
 alias nt='(alacritty --working-directory . &)'
 alias fh='history_search'
-alias nv='neovide'
+alias nv='neovide --fork'
+alias k='kubectl'
 
 # Git aliases
 alias ga="git add"
@@ -77,15 +78,17 @@ ranger()
 
 
 # Add some paths to PATH
-PATH="$PATH:$HOME/.cargo/bin"
-PATH="$PATH:$HOME/.local/bin"
-PATH="$PATH:$HOME/.fly/bin"
-PATH="$PATH:$HOME/.nix-profile/bin"
-PATH="$PATH:$HOME/go/bin"
+export PATH="$PATH:$HOME/.cargo/bin"
+export PATH="$PATH:$HOME/.local/bin"
+export PATH="$PATH:$HOME/.fly/bin"
+export PATH="$PATH:$HOME/.nix-profile/bin"
+export PATH="$PATH:$HOME/go/bin"
+export PATH="$PATH:/opt/rocm/bin"
 
 # Some exports
-FLYCTL_INSTALL="/home/erik/.fly"
-DOCKER_HOST="unix://$XDG_RUNTIME_DIR/docker.sock"
+export FLYCTL_INSTALL="/home/erik/.fly"
+# DOCKER_HOST="unix://$XDG_RUNTIME_DIR/docker.sock"
+export SSH_AUTH_SOCK="$HOME/.1password/agent.sock"
 
 # Standard PS1:
 # PS1='[\u@\h \W]\$ '
@@ -104,6 +107,8 @@ PS2='\[\033[01;35m\]>\[\033[00m\] '
 # Autocompletion
 [ -r /usr/share/bash-completion/bash_completion ] && . /usr/share/bash-completion/bash_completion
 complete -cf doas
+source <(kubectl completion bash)
+complete -o default -F __start_kubectl k
 
 # Shortcut for file extraction
 ex ()
@@ -165,3 +170,4 @@ if [ -f '/home/erik/Downloads/google-cloud-sdk/path.bash.inc' ]; then . '/home/e
 
 # The next line enables shell command completion for gcloud.
 if [ -f '/home/erik/Downloads/google-cloud-sdk/completion.bash.inc' ]; then . '/home/erik/Downloads/google-cloud-sdk/completion.bash.inc'; fi
+export PATH="$HOME/.npm-global/bin:$PATH"
