@@ -1,20 +1,15 @@
-vim.lsp.config('rust_analyzer', {
-	settings = {
-		['rust-analyzer'] = {
-			rustc = {
-				source = "discover",
-			},
-		}
-	}
-})
+local group = vim.api.nvim_create_augroup('config_lsp', { clear = true })
 
-vim.keymap.set("n", "gd", vim.lsp.buf.definition)
-vim.keymap.set("n", "K", vim.lsp.buf.hover)
-vim.keymap.set("n", "<leader>vws", vim.lsp.buf.workspace_symbol)
-vim.keymap.set("n", "<leader>vd", vim.diagnostic.open_float)
-vim.keymap.set("n", "[d", vim.diagnostic.goto_next)
-vim.keymap.set("n", "]d", vim.diagnostic.goto_prev)
-vim.keymap.set("n", "<leader>vca", vim.lsp.buf.code_action)
-vim.keymap.set("n", "<leader>vrr", vim.lsp.buf.references)
-vim.keymap.set("n", "<leader>vrn", vim.lsp.buf.rename)
-vim.keymap.set("i", "<C-h>", vim.lsp.buf.signature_help)
+vim.api.nvim_create_autocmd('LspAttach', {
+	group = group,
+	callback = function(args)
+		local opts = { buffer = args.buf, desc = 'LSP: Format buffer' }
+		vim.keymap.set({ 'n', 'x' }, '<F3>', function()
+			vim.lsp.buf.format({ async = true })
+		end, opts)
+		vim.keymap.set('n', '<leader>dl', vim.diagnostic.open_float, {
+			buffer = args.buf,
+			desc = 'LSP: Show line diagnostics',
+		})
+	end,
+})

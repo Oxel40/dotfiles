@@ -1,3 +1,3 @@
 require('config')
 
-vim.cmd('source ~/.config/nvim/alphas.vim')
+vim.cmd.source(vim.fs.joinpath(vim.fn.stdpath('config'), 'alphas.vim'))

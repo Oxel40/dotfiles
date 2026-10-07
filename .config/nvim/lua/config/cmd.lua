@@ -17,7 +17,7 @@ vim.api.nvim_create_user_command(
 )
 vim.api.nvim_create_user_command(
 	'Nospell',
-	"setlocal nospell <bar> setlocal nowrap <bar> execute 'unmap <buffer> j' <bar> execute 'unmap <buffer> k'",
+	"setlocal nospell nowrap nolinebreak <bar> execute 'silent! nunmap <buffer> j' <bar> execute 'silent! nunmap <buffer> k'",
 	{}
 )
 vim.api.nvim_create_user_command(

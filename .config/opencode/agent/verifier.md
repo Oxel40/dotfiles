@@ -5,7 +5,6 @@ description: >-
   PASS or FAIL verdict with full output. Uses gemma4:26b-mlx locally.
   Invoked by the orchestrator in Phase 4, parallel with adversary.
 mode: subagent
-# model: github-copilot/gpt-5.4-mini
 permission:
   edit: deny
   bash: allow

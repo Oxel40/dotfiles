@@ -1,54 +1,87 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  "subagent_depth": 3,
+  "mcp": {
+    "github": {
+      "enabled": false,
+      "type": "local",
+      "command": [
+        "sh",
+        "-lc",
+        "podman run -i --rm -e GITHUB_PERSONAL_ACCESS_TOKEN=\"$GITHUB_PAT\" ghcr.io/github/github-mcp-server"
+      ]
+    }
+  },
   "provider": {
     "ollama": {
-      "models": {
-        "gemma4:26b": {
-          "name": "gemma4:26b"
-        },
-        "gemma4:e4b": {
-          "name": "gemma4:e4b"
-        },
-        "qwen3-coder:30b": {
-          "name": "qwen3-coder:30b"
-        },
-        "qwen3.5:27b": {
-          "name": "qwen3.5:27b"
-        },
-        "qwen3.5:9b": {
-          "name": "qwen3.5:9b"
-        },
-        "qwen3.6:27b": {
-          "name": "qwen3.6:27b"
-        },
-        "qwen3.6:35b": {
-          "name": "qwen3.6:35b"
-        }
-      },
-      "name": "Ollama",
       "npm": "@ai-sdk/openai-compatible",
       "options": {
-        "baseURL": "http://127.0.0.1:11434/v1"
+        "baseURL": "http://127.0.0.1:11434/v1",
+        "modelsDiscovery": {
+          "enabled": true,
+          "timeoutMs": 200
+        }
       }
     },
-    "llama.cpp": {
-      "models": {
-        "unsloth/Qwen3.6-27B-MTP-GGUF:Q4_K_M": {
-          "name": "Qwen3.6-27B"
-        },
-        "unsloth/Qwen3.6-35B-A3B-MTP-GGUF:UD-Q4_K_M": {
-          "name": "Qwen3.6-35B-A3B"
-        },
-        "unsloth/Qwen3.8-27B-GGUF:UD-IQ4_XS": {
-          "name": "Qwen3.8-27B"
-        }
-      },
-      "name": "llama.cpp",
+    "llamacpp": {
       "npm": "@ai-sdk/openai-compatible",
       "options": {
-        "baseURL": "http://127.0.0.1:8080/v1"
+        "baseURL": "http://127.0.0.1:8080/v1",
+        "modelsDiscovery": {
+          "enabled": true,
+          "timeoutMs": 200
+        }
       }
     }
   },
-  "plugin": ["@dietrichgebert/ponytail"]
+  "permission": {
+    "websearch": "allow",
+    "bash": {
+      "git push*": "ask",
+      "rm -rf*": "ask"
+    }
+  },
+  "agent": {
+    "orchestrator": {
+      "model": "group:orchestrator"
+    },
+    "planner": {
+      "model": "group:planner"
+    },
+    "implementer": {
+      "model": "group:implementer"
+    },
+    "adversary": {
+      "model": "group:adversary"
+    },
+    "verifier": {
+      "model": "group:verifier"
+    },
+    "oracle": {
+      "model": "group:oracle"
+    },
+    "reviewer": {
+      "model": "group:review"
+    },
+    "explore": {
+      "model": "group:explore"
+    }
+  },
+  "command": {
+    "orchestrate": {
+      "agent": "orchestrator",
+      "description": "Heavy multi-agent feature build: scout -> plan -> implement -> adversarial review -> verify -> iterate. For multi-file features; for single-file work stay in build and use @oracle + /checks. Takes over the current session — run it from a fresh one. Usage: /orchestrate <feature description>",
+      "template": "You are the orchestrator. Load and follow the 'orchestration-loop' skill precisely. The feature request to implement is:\n\n$ARGUMENTS\n\nBegin immediately with Phase 1 (scouting). Only ask for clarification if the goal is genuinely ambiguous — one focused question, then proceed regardless."
+    },
+    "checks": {
+      "subtask": true,
+      "description": "Run every check in .agents/checks/ against the diff, one subagent each, in parallel. Codified conventions — complements the built-in /review, which covers general correctness. Usage: /checks [scope]",
+      "template": "Run the project's review checks in parallel. You are the aggregator only — you do NOT review any code yourself.\n\n1. DETERMINE SCOPE. If the following is non-empty, use it as the scope (a git ref range, `--staged`, a commit hash, or a path): $ARGUMENTS\n   Otherwise use `git diff`. If that is empty use `git diff --staged`. If that is also empty use `git show HEAD`. Also run `git status --short` to catch untracked files — they are part of the change and no diff will show them. State the resolved scope in one line.\n\n2. COLLECT CHECKS. Glob `.agents/checks/*.md` under the project root and `~/.agents/checks/*.md`. Read each one. A project check overrides a global check with the same `name` in its frontmatter.\n\n3. DISPATCH. Issue ONE `task` call per check, and issue them ALL IN THE SAME RESPONSE so they run in parallel. Use `subagent_type: \"reviewer\"`. Each brief must contain: the check's `name`, its `severity-default`, the check body VERBATIM (do not summarize it), and the exact scope commands to run. If no check files exist anywhere, say so and stop — do not invent a review, the built-in /review already covers general correctness.\n\n4. AGGREGATE. Group findings by severity: critical, high, medium, low. Drop exact duplicates at the same file:line. Name any check that returned `clean`. Do not add findings of your own, do not soften or reword a finding, and do not fix anything — this is a report.\n\n5. End with a one-line verdict: total findings by severity, and whether anything blocks a commit (critical or high does; medium and low do not)."
+    }
+  },
+  "plugin": [
+    "@dietrichgebert/ponytail",
+    "@oxel40/opencode-model-groups",
+    "opencode-models-discovery@latest"
+  ]
 }

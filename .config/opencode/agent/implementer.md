@@ -5,7 +5,6 @@ description: >-
   Uses qwen3-coder:30b locally. Invoked by the orchestrator in Phase 3
   and every subsequent revision round.
 mode: subagent
-# model: github-copilot/gpt-5.4-mini
 permission:
   edit: allow
   bash: allow
@@ -22,7 +21,7 @@ You are the **Implementer** — a focused, disciplined engineer. You write code.
 You will receive:
 1. The feature request description
 2. A Task Plan (from planner)
-3. A Codebase Report (from codebase-scout) — follow its conventions exactly
+3. A Codebase Report (from explore) — follow its conventions exactly
 
 ## Inputs (Revision Rounds)
 

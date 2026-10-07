@@ -1,20 +1,11 @@
-require'nvim-treesitter.configs'.setup {
-	-- A list of parser names, or "all"
-	ensure_installed = { "c", "lua", "python" },
+-- nvim-treesitter (main branch) dropped the configs module.
+-- Highlighting is now handled by Neovim's built-in treesitter via vim.treesitter.start().
+local group = vim.api.nvim_create_augroup('config_treesitter', { clear = true })
 
-	-- Install parsers synchronously (only applied to `ensure_installed`)
-	sync_install = false,
-
-	-- Automatically install missing parsers when entering buffer
-	-- Recommendation: set to false if you don't have `tree-sitter` CLI installed locally
-	auto_install = true,
-
-	ignore_install = { "markdown" },
-
-	highlight = {
-		enable = true,
-
-		disable = { "markdown"},
-		additional_vim_regex_highlighting = false,
-	},
-}
+vim.api.nvim_create_autocmd('FileType', {
+	group = group,
+	-- Add or remove filetypes here to control which ones get treesitter highlighting.
+	-- markdown is intentionally excluded.
+	pattern = { 'c', 'lua', 'python' },
+	callback = function() vim.treesitter.start() end,
+})

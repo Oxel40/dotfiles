@@ -64,7 +64,7 @@ Use read/glob/grep/bash (read-only commands only) to inspect the actual code. Do
 
 ### Regressions
 - Could any changed file break existing functionality not covered by tests?
-- Were regression-risk files (from codebase-scout) modified? If so, are changes safe?
+- Were regression-risk files (from explore) modified? If so, are changes safe?
 
 ### Code Quality (report as MINOR unless egregious)
 - Dead code, unused variables/imports
