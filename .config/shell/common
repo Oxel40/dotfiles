@@ -20,3 +20,8 @@ alias proofread='pi --model github-copilot/gpt-5.6-luna --thinking medium --no-t
 alias tmp='cd $(mktemp -d)'
 
 export PATH="$HOME/.config/bin:$PATH"
+
+if command -v pfetch >/dev/null 2>&1; then
+    echo ''
+    PF_INFO='ascii title os kernel uptime pkgs shell de' pfetch
+fi

@@ -136,8 +136,6 @@ ex ()
 # Ufetch
 # sh ~/.config/ufetch/ufetch-arch
 # Pfetch
-echo ''
-PF_INFO='ascii title os kernel uptime pkgs shell de' pfetch
 
 conda_init ()
 {
@@ -171,3 +169,5 @@ if [ -f '/home/erik/Downloads/google-cloud-sdk/path.bash.inc' ]; then . '/home/e
 # The next line enables shell command completion for gcloud.
 if [ -f '/home/erik/Downloads/google-cloud-sdk/completion.bash.inc' ]; then . '/home/erik/Downloads/google-cloud-sdk/completion.bash.inc'; fi
 export PATH="$HOME/.npm-global/bin:$PATH"
+
+source .config/shell/common
