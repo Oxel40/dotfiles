@@ -1,0 +1,22 @@
+#!/bin/sh
+
+# Alias
+alias dotfiles='/usr/bin/git --git-dir=$HOME/dotfiles/ --work-tree=$HOME'
+
+alias gp="git pull"
+alias gs="git status"
+alias gsb="git switch"
+alias gc="git commit"
+alias gd="git diff"
+alias gl="git log"
+alias ga="git add"
+alias gpush="git push"
+alias gpushf="git push --force-with-lease"
+
+alias yolo-opencode='guard opencode --auto'
+alias yolo='guard pi'
+alias ask='guard --readonly pi'
+alias proofread='pi --model github-copilot/gpt-5.6-luna --thinking medium --no-tools --system-prompt "Return only the corrected version of every message. Fix spelling and grammar while preserving meaning, tone, formatting, and language. Do not answer the message."'
+alias tmp='cd $(mktemp -d)'
+
+export PATH="$HOME/.config/bin:$PATH"

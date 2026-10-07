@@ -1,0 +1,238 @@
+#!/bin/sh
+# guard - run a command under a macOS or Linux write boundary.
+#
+#   guard [--readonly] [--allow DIR]... <cmd> [args...]
+#
+# Filesystem reads stay unconfined (Linux exposes a minimal /dev) and the
+# network stays on. Writes are confined to $PWD (unless --readonly), $TMPDIR,
+# any --allow dirs, and paths listed in allow files:
+#   ${XDG_CONFIG_HOME:-~/.config}/guard/guard-allow   global, absolute/~ paths
+#   .guard-allow in $PWD and every parent up to /      relative, confined to its
+#                                                      own dir; off in --readonly
+# Everything else is denied for the command and every process it spawns (EPERM
+# on macOS; usually EROFS on Linux). Loaded allow files are protected on both;
+# bwrap cannot block new .guard-allow files or a missing global config path.
+#
+# This is a write boundary, not a jail. Reads are unconfined (~/.ssh included),
+# the env is inherited (tokens and all), and destruction *inside* the writable
+# set is permitted by design.
+#
+# ponytail: bwrap cannot deny arbitrary allow-file names, protect a missing
+# global config dir, or revoke writable inherited FDs; use stronger enforcement.
+
+set -eu
+
+die() { printf 'guard: %s\n' "$*" >&2; exit 2; }
+
+platform=$(uname -s)
+case "$platform" in
+Darwin)
+	[ -x /usr/bin/sandbox-exec ] || die "/usr/bin/sandbox-exec missing; refusing to run unconfined"
+	;;
+Linux)
+	# Do not trust caller-controlled PATH for the sandbox executable.
+	bwrap_bin=
+	for candidate in /usr/bin/bwrap /bin/bwrap /run/current-system/sw/bin/bwrap /run/wrappers/bin/bwrap; do
+		if [ -f "$candidate" ] && [ -x "$candidate" ]; then
+			bwrap_bin=$candidate
+			break
+		fi
+	done
+	[ -n "$bwrap_bin" ] || die "bwrap missing; refusing to run unconfined"
+	;;
+*) die "unsupported platform $platform" ;;
+esac
+
+readonly_mode=0
+allow=""
+
+while [ $# -gt 0 ]; do
+	case "$1" in
+	--readonly) readonly_mode=1; shift ;;
+	--allow)
+		[ $# -ge 2 ] || die "--allow needs a directory"
+		allow="$allow$2:"; shift 2 ;;
+	--allow=*) allow="$allow${1#--allow=}:"; shift ;;
+	--) shift; break ;;
+	-*) die "unknown option $1" ;;
+	*) break ;;
+	esac
+done
+
+[ $# -gt 0 ] || die "usage: guard [--readonly] [--allow DIR]... <cmd> [args...]"
+
+confdir="${XDG_CONFIG_HOME:-$HOME/.config}/guard"
+tab=$(printf '\t')
+newline='
+'
+
+# Keep the line-based policy records unambiguous; fail closed on control chars.
+entry() {
+	case "$1" in
+	*"$tab"* | *"$newline"*) printf '\tinvalid\n' ;;
+	*) printf '%s\t%s\n' "$1" "$2" ;;
+	esac
+}
+
+# sbpl KIND PATH: one SBPL filter line. String literal: escape \ then ".
+sbpl() {
+	printf '    (%s "%s")\n' "$1" "$(printf '%s' "$2" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g')"
+}
+
+# read_allow FILE CONFINE: emit PATH<TAB>KIND records for entries in an allow file.
+# One path per line; '#' comments and blank lines skipped; trailing '/' ignored.
+# Paths resolve against FILE's directory. CONFINE=1 (project .guard-allow):
+# a leading '/' anchors to that dir, and anything that canonicalizes outside it
+# is dropped, so a cloned repo can't widen the sandbox. CONFINE=0 (global file):
+# absolute and ~/ paths are taken as-is.
+# ponytail: plain paths, no globs/negation; add SBPL regex translation if needed.
+read_allow() {
+	base=$(cd "$(dirname "$1")" && pwd -P) || return 0
+	file_real=$(realpath "$1") || return 0
+	entry "$file_real" protect
+	sed -e 's/\r$//' -e 's/[[:space:]]*$//' -e 's:/*$::' "$1" |
+	while IFS= read -r line || [ -n "$line" ]; do
+		case "$line" in '' | '#'*) continue ;; esac
+		if [ "$2" -eq 1 ]; then
+			p="$base/${line#/}"
+		else
+			case "$line" in
+			'~') p=$HOME ;;
+			'~/'*) p="$HOME/${line#??}" ;;
+			/*) p=$line ;;
+			*) p="$base/$line" ;;
+			esac
+		fi
+		# Canonicalize before checking project confinement.
+		if [ -d "$p" ]; then
+			kind=subpath real=$(cd "$p" && pwd -P) || continue
+		elif [ -e "$p" ]; then
+			kind=literal real=$(realpath "$p") || continue
+		else
+			continue
+		fi
+		if [ "$2" -eq 1 ]; then
+			case "$real/" in
+			"${base%/}/"*) ;;
+			*) printf 'guard: %s: ignoring "%s" (outside %s)\n' "$1" "$line" "$base" >&2; continue ;;
+			esac
+		fi
+		entry "$real" "$kind"
+	done
+}
+
+# Collect canonical policy paths. Missing writable paths are skipped rather
+# than emitted as broken mounts. Entries beyond $PWD and $TMPDIR come from
+# --allow, GUARD_ALLOW, and allow files.
+#
+# Emit a canonical allow-file path so Linux can remount it read-only even when
+# its parent directory is writable.
+protect_file() {
+	real=$(realpath "$1") || return 0
+	entry "$real" protect
+}
+
+# Canonical writable paths, shared by the Seatbelt and bwrap renderers. Path
+# comes first so sorting puts parent mounts before their children.
+confreal=$(cd "$confdir" 2>/dev/null && pwd -P) || confreal=$confdir
+paths=$(
+	{
+		{
+			[ "$readonly_mode" -eq 1 ] || printf '%s\n' "$PWD"
+			printf '%s\n' "${TMPDIR:-/tmp}"
+			printf '%s' "$allow${GUARD_ALLOW:-}" | tr ':' '\n'
+		} | while IFS= read -r d; do
+			[ -n "$d" ] || continue
+			real=$(cd "$d" 2>/dev/null && pwd -P) || continue
+			[ -n "$real" ] || continue
+			entry "$real" subpath
+		done
+
+		# macOS denies the whole config directory; mirror that when it exists.
+		[ -d "$confdir" ] && entry "$confreal" protect
+		[ -f "$confdir/guard-allow" ] && read_allow "$confdir/guard-allow" 0
+
+		# Project files, walking up from the physical cwd to /.
+		d=$(pwd -P)
+		while :; do
+			if [ -f "$d/.guard-allow" ]; then
+				if [ "$readonly_mode" -eq 0 ]; then
+					read_allow "$d/.guard-allow" 1
+				else
+					protect_file "$d/.guard-allow"
+				fi
+			fi
+			[ "$d" != / ] || break
+			d=${d%/*}
+			[ -n "$d" ] || d=/
+		done
+		true
+	} | sort -u
+)
+case "$paths" in *"$tab"invalid*) die "paths containing tabs/newlines are unsupported" ;; esac
+subpaths=$(
+	printf '%s\n' "$paths" |
+	while IFS="$tab" read -r path kind; do
+		if [ "$kind" = subpath ] || [ "$kind" = literal ]; then
+			sbpl "$kind" "$path"
+		fi
+	done
+)
+subpaths=$(printf '%s\n' "$subpaths" | sort -u)
+
+case "$platform" in
+Darwin)
+	# (allow default) then (deny file-write*) then re-allow. Seatbelt is
+	# last-match-wins, so the trailing allow block wins for the listed paths.
+	# The /dev set is taken verbatim from pi-guard, where it is proven against a TUI.
+	profile="(version 1)
+(allow default)
+(deny file-write*)
+(allow file-write*
+$subpaths
+    (literal \"/dev/null\")
+    (literal \"/dev/zero\")
+    (literal \"/dev/tty\")
+    (literal \"/dev/stdout\")
+    (literal \"/dev/stderr\")
+    (regex #\"^/dev/fd/\")
+    (regex #\"^/dev/ptmx$\")
+    (regex #\"^/dev/ttys[0-9]*$\"))
+(deny file-write*
+    (regex #\"/\\.guard-allow$\")
+$(sbpl subpath "$confreal"))"
+
+	[ "${GUARD_DEBUG:-}" = "" ] || printf '%s\n' "$profile" >&2
+	exec /usr/bin/sandbox-exec -p "$profile" "$@"
+	;;
+Linux)
+	[ "${GUARD_DEBUG:-}" = "" ] || {
+		printf 'guard: bwrap policy (PATH<TAB>KIND)\n%s\n' "$paths" >&2
+	}
+
+	# Prepend mounts to the command vector. Reverse sorting makes mount order
+	# parent-before-child; read-only exceptions are mounted after writable dirs.
+	physical_cwd=$(pwd -P)
+	set -- --chdir "$physical_cwd" -- "$@"
+	mounts=$(printf '%s\n' "$paths" | LC_ALL=C sort -r)
+	tab=$(printf '\t')
+	while IFS="$tab" read -r path kind; do
+		[ "$kind" = protect ] && [ -e "$path" ] || continue
+		set -- --ro-bind "$path" "$path" "$@"
+	done <<EOF
+$mounts
+EOF
+	while IFS="$tab" read -r path kind; do
+		case "$kind" in
+		subpath | literal)
+			[ -e "$path" ] || continue
+			set -- --bind "$path" "$path" "$@"
+			;;
+		esac
+	done <<EOF
+$mounts
+EOF
+	set -- --ro-bind / / --dev /dev --share-net --die-with-parent "$@"
+	exec "$bwrap_bin" "$@"
+	;;
+esac

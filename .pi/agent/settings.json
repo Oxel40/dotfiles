@@ -1,0 +1,25 @@
+{
+  "defaultModel": "claude-opus-5.5",
+  "defaultProvider": "github-copilot",
+  "defaultThinkingLevel": "medium",
+  "enableInstallTelemetry": false,
+  "lastChangelogVersion": "1.0.4",
+  "packages": [
+    "npm:pi-llama-cpp",
+    "git:github.com/DietrichGebert/ponytail"
+  ],
+  "quietStartup": true,
+  "theme": "dark",
+  "modelThinkingLevels": {
+    "github-copilot/gpt-6-luna": "max",
+    "github-copilot/claude-opus-5.5": "medium"
+  },
+  "enabledModels": [
+    "github-copilot/gpt-6-luna",
+    "github-copilot/claude-opus-5.5",
+    "github-copilot/gpt-6-astra",
+    "github-copilot/gpt-6-sol"
+  ],
+  "hideThinkingBlock": true,
+  "tuiMode": "regular"
+}

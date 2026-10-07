@@ -14,22 +14,6 @@ This skill defines the exact protocol the **orchestrator** agent follows when ex
 
 ---
 
-## Subagent Invocation Mechanism
-
-All subagents are dispatched using the `task` tool:
-
-```
-task(
-  subagent_type: "<agent-name>",
-  description: "<short description for the UI>",
-  prompt: "<full brief text>"
-)
-```
-
-**To run two agents in parallel**, issue both `task` calls in the **same response step** — do not wait for one to complete before issuing the other. The protocol marks parallel phases explicitly with `[PARALLEL]`.
-
----
-
 ## State to Track
 
 Maintain these values throughout the session:
@@ -40,111 +24,103 @@ ITERATION: 0
 MAX_ITERATIONS: 5
 CODEBASE_REPORT: null
 WEB_REPORT: null
+DRAFT_PLAN: null
+ORACLE_PLAN_REVIEW: null
 TASK_PLAN: null
 IMPL_REPORT: null
-ADVERSARY_REPORT: null
 ADVERSARY_VERDICT: null
-VERIFIER_REPORT: null
 VERIFIER_VERDICT: null
 ```
 
-After each phase completes, update the **Context Tracker** (see below) before proceeding.
-
 ---
 
-## Context Tracker
+## Phase 1 — Scout (runs once at start, may re-run on revision)
 
-After every phase, print and maintain this compact block. This is the single source of truth for current state and survives context pressure. Do not rely on scrollback — always reprint this at the start of each phase announcement.
+Both briefs go to opencode's **built-in `explore` subagent** — there is no
+separate scout agent. `explore` already holds `websearch`, `webfetch`, `bash`
+and `read` permissions, so the external brief is fully within its powers; do
+not add a `scout` agent back. `explore` has no report format of its own, so
+each brief below must specify it in full.
 
+**Issue both as `task` calls in a single response** so they run in parallel.
+Two calls, same `subagent_type: "explore"`, different briefs. Do not wait for
+one before starting the other.
+
+### `explore` brief (codebase):
 ```
-─────────────────────────────────────────
-ORCHESTRATION TRACKER
-Goal: <FEATURE_REQUEST — one line max>
-Iteration: <ITERATION> / <MAX_ITERATIONS>
-
-Phase 1 — Scout:       [ pending | done | re-run ]
-Phase 2 — Plan:        [ pending | done ]
-Phase 3 — Implement:   [ pending | done (N) ]
-Phase 4 — Review:      [ pending | done (N) ]
-  Adversary:           [ pending | PASS | FAIL — N blockers, M majors ]
-  Verifier:            [ pending | PASS | FAIL — N failures ]
-
-Commands detected:
-  test:  <command or NOT DETECTED>
-  build: <command or NOT DETECTED>
-  lint:  <command or NOT DETECTED>
-─────────────────────────────────────────
-```
-
-Fill in only what is known. Leave `pending` for phases not yet reached. Update the "Commands detected" fields as soon as the codebase-scout report is received.
-
----
-
-## Phase 1 — Scout [PARALLEL]
-
-Print: `Phase 1/5 — Scouting codebase and web...`
-
-Print the Context Tracker (iteration 0, all pending).
-
-**Invoke both scouts in the same response step** using two simultaneous `task` calls:
-
-### codebase-scout invocation:
-```
-task(
-  subagent_type: "codebase-scout",
-  description: "Scout codebase for feature context",
-  prompt: """
 Feature request: <FEATURE_REQUEST>
 Working directory: <current project root>
 
-Produce a complete Codebase Report as specified in your instructions.
-"""
-)
+Map this codebase for the feature above. Do not modify anything.
+Return exactly these sections:
+
+## Tech Stack
+Languages, frameworks, package manager, notable libraries — with the file
+that proves each (package.json, go.mod, pyproject.toml, ...).
+
+## Commands
+Build, test, lint, typecheck, run. Exact commands, taken from package.json
+scripts / Makefile / CI config. Say "none found" rather than guessing.
+
+## Relevant Files
+Every file the feature will need to read or change, with a one-line reason.
+file:line for the specific functions that matter.
+
+## Existing Patterns
+How this codebase already does the thing being asked for — error handling,
+config, testing, module layout. The implementer must match these, not
+invent new ones.
+
+## Constraints & Gotchas
+Anything that will break a naive implementation.
 ```
 
-### web-scout invocation (same step):
+### `explore` brief (external):
 ```
-task(
-  subagent_type: "web-scout",
-  description: "Research external docs and APIs",
-  prompt: """
 Feature request: <FEATURE_REQUEST>
-Tech stack (if known): unknown — codebase-scout is running in parallel
+Tech stack (if known): <from the explore run, or "unknown">
 
-Produce a complete Web Research Report as specified in your instructions.
-"""
-)
+Research what is needed to implement the above correctly. You may clone and
+read dependency source. Do not modify the workspace.
+Return exactly these sections:
+
+## Relevant APIs
+The specific functions/types to use, with real signatures read from the
+installed version's source — not remembered ones. Note the version.
+
+## Correct Usage
+Minimal correct example for each, in the project's language.
+
+## Pitfalls
+Deprecations, breaking changes, and common misuse for THIS version.
+
+## Sources
+File paths in cloned source, or URLs. Mark anything you could not verify.
 ```
 
-Wait for both to complete. Store results as `CODEBASE_REPORT` and `WEB_REPORT`.
+Wait for both to complete. Store results as CODEBASE_REPORT and WEB_REPORT.
 
-**After receiving reports:**
-- Extract test/build/lint commands from the codebase-scout report
-- Update the Context Tracker "Commands detected" fields immediately
-- If all three commands are `NOT DETECTED`, warn the user before proceeding
-
-**Validate before proceeding:** If the codebase-scout report's `### Test & Build Commands` section lists `NOT DETECTED` for the primary test command, note this in the tracker and flag it to the user — the verifier will be limited to build/lint only.
-
-Print updated Context Tracker.
+**Skip the external `explore` call entirely** if the feature uses no external library the
+codebase does not already use. Say so in one line and set WEB_REPORT to
+"skipped — no new external dependencies".
 
 **Re-scout on revision rounds:**
-- If the adversary report says "Needs codebase re-scout: YES" → re-run codebase-scout with the adversary's stated reason appended to the prompt
-- If the adversary report says "Needs web re-scout: YES" → re-run web-scout with the adversary's stated reason appended to the prompt
-- Update `CODEBASE_REPORT` / `WEB_REPORT` before passing to the implementer
-- Print: `Re-scouting codebase — adversary flagged: <reason>`
+- If the adversary report says "Needs codebase re-scout: YES" → re-run `explore` with the codebase brief plus the adversary's stated reason as additional context
+- If the adversary report says "Needs web re-scout: YES" → re-run `explore` with the external brief plus the adversary's stated reason as additional context
+- Update the stored reports before passing to implementer
 
 ---
 
 ## Phase 2 — Plan
 
-Print: `Phase 2/5 — Planning implementation...`
+### Phase 2a — Draft
 
-**Invoke planner:**
+**Invoke planner** as a subagent.
+
+### planner brief:
 ```
-task(
-  subagent_type: "planner",
-  description: "Synthesize scout reports into task plan",
-  prompt: """
+You are the planner agent.
+
 Feature request: <FEATURE_REQUEST>
 
 --- CODEBASE REPORT ---
@@ -154,13 +130,71 @@ Feature request: <FEATURE_REQUEST>
 <WEB_REPORT>
 
 Produce a complete Task Plan as specified in your instructions.
-"""
-)
 ```
 
-Wait for completion. Store result as `TASK_PLAN`.
+Wait for completion. Store result as DRAFT_PLAN.
 
-Print updated Context Tracker.
+### Phase 2b — Oracle review
+
+**Invoke oracle** as a subagent.
+
+### oracle brief:
+```
+You are the oracle agent.
+
+Feature request: <FEATURE_REQUEST>
+Working directory: <current project root>
+
+--- DRAFT TASK PLAN ---
+<DRAFT_PLAN>
+
+--- CODEBASE REPORT ---
+<CODEBASE_REPORT>
+
+--- WEB RESEARCH REPORT ---
+<WEB_REPORT>
+
+Review the draft plan before implementation. Verify its file paths and line
+references against the actual code. Identify incorrect assumptions, missing
+steps, unnecessary work, and simpler approaches. Return your standard oracle
+analysis with concrete recommendations for the planner. If the plan is sound,
+say so briefly — do not manufacture objections.
+```
+
+Wait for completion. Store result as ORACLE_PLAN_REVIEW.
+
+### Phase 2c — Revise
+
+**Invoke planner** as a subagent for the single revision round.
+
+### planner revision brief:
+```
+You are the planner agent.
+
+Feature request: <FEATURE_REQUEST>
+
+--- CODEBASE REPORT ---
+<CODEBASE_REPORT>
+
+--- WEB RESEARCH REPORT ---
+<WEB_REPORT>
+
+--- DRAFT TASK PLAN ---
+<DRAFT_PLAN>
+
+--- ORACLE PLAN REVIEW ---
+<ORACLE_PLAN_REVIEW>
+
+Revise the draft using the oracle's review. Return a complete replacement Task
+Plan in your standard format. Do not return a diff, changelog, or list of
+edits. Where the oracle's direct file reads contradict the codebase report,
+prefer the oracle; if the disagreement is material, record it under Risks &
+Open Questions.
+```
+
+Wait for completion. Store result as TASK_PLAN. The plan review runs exactly
+once; implementation revision rounds resume at Phase 3 and never re-invoke the
+planner or oracle.
 
 ---
 
@@ -168,28 +202,13 @@ Print updated Context Tracker.
 
 Set `ITERATION = ITERATION + 1`.
 
-**Print the Iteration Status block** at the start of every Phase 3 entry (initial and all revisions):
+**Invoke implementer** as a subagent.
 
+### implementer brief (initial round):
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-ITERATION <ITERATION> / <MAX_ITERATIONS>
-Goal: <FEATURE_REQUEST — one line max>
-<If initial:>
-  Starting initial implementation.
-<If revision:>
-  Adversary: <ADVERSARY_VERDICT> — <count> BLOCKERs, <count> MAJORs, <count> MINORs
-  Verifier:  <VERIFIER_VERDICT> — <summary: e.g. "3 test failures", "build error", "passed">
-  Sending back to implementer to address findings.
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
+You are the implementer agent.
 
-### Initial round:
-```
-task(
-  subagent_type: "implementer",
-  description: "Implement feature — iteration 1",
-  prompt: """
-Iteration: Initial (1 of <MAX_ITERATIONS> max)
+Iteration: Initial (1 of 5 max)
 Feature request: <FEATURE_REQUEST>
 
 --- TASK PLAN ---
@@ -199,16 +218,12 @@ Feature request: <FEATURE_REQUEST>
 <CODEBASE_REPORT>
 
 Implement the Task Plan completely. Produce an Implementation Report.
-"""
-)
 ```
 
-### Revision rounds:
+### implementer brief (revision rounds):
 ```
-task(
-  subagent_type: "implementer",
-  description: "Revise implementation — iteration <ITERATION>",
-  prompt: """
+You are the implementer agent.
+
 Iteration: Revision <ITERATION> of <MAX_ITERATIONS>
 Feature request: <FEATURE_REQUEST>
 
@@ -216,7 +231,7 @@ Feature request: <FEATURE_REQUEST>
 <TASK_PLAN>
 
 --- CODEBASE REPORT ---
-<CODEBASE_REPORT>
+<CODEBASE_REPORT (updated if re-scouted)>
 
 --- ADVERSARY REPORT ---
 <ADVERSARY_REPORT>
@@ -227,28 +242,20 @@ Feature request: <FEATURE_REQUEST>
 Address all BLOCKER and MAJOR findings from the adversary report.
 Fix all test and build failures from the verifier report.
 Produce an updated Implementation Report.
-"""
-)
 ```
 
-Wait for completion. Store result as `IMPL_REPORT`.
-
-Print updated Context Tracker.
+Wait for completion. Store result as IMPL_REPORT.
 
 ---
 
-## Phase 4 — Review & Verify [PARALLEL]
+## Phase 4 — Review & Verify (parallel)
 
-Print: `Phase 4/5 — Adversarial review and verification (parallel)...`
+**Invoke adversary and verifier simultaneously** using the `task` tool.
 
-**Invoke adversary and verifier in the same response step** using two simultaneous `task` calls:
-
-### adversary invocation:
+### adversary brief:
 ```
-task(
-  subagent_type: "adversary",
-  description: "Adversarial code review — iteration <ITERATION>",
-  prompt: """
+You are the adversary agent.
+
 Feature request: <FEATURE_REQUEST>
 
 --- IMPLEMENTATION REPORT ---
@@ -261,16 +268,12 @@ Feature request: <FEATURE_REQUEST>
 <CODEBASE_REPORT>
 
 Adversarially review the implementation. Produce an Adversary Report with a PASS or FAIL verdict.
-"""
-)
 ```
 
-### verifier invocation (same step):
+### verifier brief:
 ```
-task(
-  subagent_type: "verifier",
-  description: "Run tests, build, lint — iteration <ITERATION>",
-  prompt: """
+You are the verifier agent.
+
 --- IMPLEMENTATION REPORT ---
 <IMPL_REPORT>
 
@@ -279,16 +282,10 @@ task(
 
 Working directory: <current project root>
 
-Use the test/build/lint commands from the Codebase Report — do not re-detect.
-If a command is listed as NOT DETECTED, skip that step and note it.
 Run the project's build, lint, and tests. Produce a Verification Report with a PASS or FAIL verdict.
-"""
-)
 ```
 
-Wait for both. Store results as `ADVERSARY_REPORT`, `ADVERSARY_VERDICT`, `VERIFIER_REPORT`, `VERIFIER_VERDICT`.
-
-Print updated Context Tracker.
+Wait for both. Store results as ADVERSARY_REPORT and VERIFIER_REPORT.
 
 ---
 
@@ -298,14 +295,31 @@ Print updated Context Tracker.
 IF ADVERSARY_VERDICT == PASS AND VERIFIER_VERDICT == PASS:
     → Go to Phase 6 (Done)
 
+ELSE IF a BLOCKER or MAJOR with the same root cause as last round survived:
+    → Go to Phase 7 (Escalate) — do not spend remaining iterations
+
 ELSE IF ITERATION >= MAX_ITERATIONS:
     → Go to Phase 7 (Escalate)
 
 ELSE:
     → Check adversary re-scout recommendations
-    → Re-run scouts if flagged (Phase 1 partial)
+    → Re-run scouts if needed (Phase 1 partial)
     → Go to Phase 3 (Revision round)
 ```
+
+### Early escalation
+
+A finding that survives a full revision round means the **plan** is wrong, not
+the code. More implementer rounds will not fix it, they will just burn tokens
+producing variations of the same mistake.
+
+Track REPEATED_FINDINGS across rounds. Compare by root cause, not by wording —
+the adversary may describe the same defect differently each round. The moment a
+BLOCKER or MAJOR appears in two consecutive adversary reports, or the same test
+fails in two consecutive verifier reports after the implementer claimed to fix
+it, stop and escalate. Name the stuck finding explicitly in the escalation
+report and say which phase you believe is at fault (usually the plan, sometimes
+a scout report that missed context).
 
 ---
 
@@ -329,9 +343,9 @@ Print the following **Final Success Report** to the user:
 
 ### Verification
 - Adversary: PASS
-- Build: <pass / fail / skipped>
-- Lint: <pass / fail / warnings only / skipped>
-- Tests: <pass / fail, N tests run>
+- Build: <pass/fail>
+- Lint: <pass/fail or skipped>
+- Tests: <pass/fail, N tests run>
 
 ### Files Changed
 <list from final IMPL_REPORT>
@@ -352,11 +366,16 @@ Print the following **Escalation Report** to the user:
 ### Feature
 <FEATURE_REQUEST>
 
-### Result: MAX ITERATIONS REACHED (<MAX_ITERATIONS>)
+### Result: <MAX ITERATIONS REACHED (<MAX_ITERATIONS>) | STUCK — finding survived a revision round>
 
 ### Current Status
 - Adversary verdict: <PASS | FAIL>
 - Verifier verdict: <PASS | FAIL>
+- Iterations used: <ITERATION> of <MAX_ITERATIONS>
+
+### Stuck Finding (if escalated early)
+<the finding that survived, and which phase is at fault — plan, or a scout
+report that missed context>
 
 ### Unresolved Issues
 
@@ -364,7 +383,7 @@ Print the following **Escalation Report** to the user:
 <list remaining BLOCKERs and MAJORs>
 
 #### From Verifier (if FAIL)
-<list failing tests / build errors>
+<list failing tests/build errors>
 
 ### What Was Completed
 <summary of what was successfully implemented and works>
@@ -381,10 +400,10 @@ Print the following **Escalation Report** to the user:
 ## Orchestrator Conduct Rules
 
 1. **Never summarize reports when passing them between agents.** Pass the full structured report text.
-2. **Never skip the scouts**, even on simple requests — the verifier needs the detected test commands.
-3. **Always run adversary and verifier in parallel.** Issue both `task` calls in the same response step.
-4. **Always run codebase-scout and web-scout in parallel.** Issue both `task` calls in the same response step.
-5. **Do not editorialize verdicts.** If adversary says FAIL, it is FAIL. Do not override based on your own reading of the code.
-6. **Inform the user of progress** at the start of each phase with the status line and updated Context Tracker.
-7. **On re-scout**, tell the user why: e.g. `Re-scouting codebase — adversary flagged missing context around authentication module.`
-8. **Keep the user informed on each iteration** using the Iteration Status block at Phase 3 entry.
+2. **Never skip the codebase `explore` call**, even on simple requests — the verifier needs the detected test command. The external brief may be skipped when no new external dependency is involved.
+3. **Always run adversary and verifier in parallel.** Use the `task` tool with two simultaneous invocations.
+4. **Do not editorialize verdicts.** If adversary says FAIL, it's FAIL. Do not override based on your own reading of the code.
+5. **Inform the user of progress** at the start of each phase with a brief one-line status: e.g. `Phase 1/5 — Scouting codebase and web...`
+6. **On re-scout**, tell the user why: `Re-scouting codebase — adversary flagged missing context around authentication module.`
+7. **Keep the user informed on each iteration**: `Revision 2/5 — adversary found 2 BLOCKERs, verifier: 3 test failures. Sending back to implementer.`
+8. **Run plan review exactly once.** Phase 2 always runs draft → oracle review → planner revision. Implementation revision rounds return to Phase 3, not Phase 2.
