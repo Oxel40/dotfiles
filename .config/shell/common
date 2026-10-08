@@ -100,6 +100,7 @@ elif [ -n "$ZSH_VERSION" ]; then
 fi
 
 if command -v pfetch >/dev/null 2>&1; then
-    echo ''
+    printf '\n'
     PF_INFO='ascii title os kernel uptime pkgs shell de' pfetch
+    printf '\n'
 fi
