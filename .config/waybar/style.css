@@ -10,7 +10,7 @@
 
 window#waybar {
     /* background: rgba(21, 18, 27, 0); */
-    background: rgba(21, 18, 27, 255);
+    background: rgba(21, 18, 27, 1);
     color: #cdd6f4;
 }
 
@@ -38,12 +38,6 @@ tooltip {
     color: #cdd6f4;
 }
 
-#workspaces button.focused {
-	color: #a6adc8;
-    background: #eba0ac;
-    border-radius: 10px;
-}
-
 #workspaces button.urgent {
     color: #11111b;
     background: #a6e3a1;
@@ -56,14 +50,9 @@ tooltip {
     border-radius: 10px;
 }
 
-#custom-language,
-#custom-updates,
-#custom-caffeine,
-#custom-weather,
 #window,
 #clock,
 #battery,
-#pulseaudio,
 #wireplumber,
 #network,
 #workspaces,
@@ -90,28 +79,8 @@ tooltip {
     padding-left: 5px;
 }
 
-#custom-caffeine {
-    color: #89dceb;
-    border-radius: 10px 0px 0px 10px;
-    border-right: 0px;
-    margin-left: 10px;
-}
-
-#custom-language {
-    color: #f38ba8;
-    border-left: 0px;
-    border-right: 0px;
-}
-
-#custom-updates {
-    color: #f5c2e7;
-    border-left: 0px;
-    border-right: 0px;
-    border-radius: 10px 0px 0px 10px;;
-}
-
 #window {
-    background: rgba(21, 18, 27, 255);
+    background: rgba(21, 18, 27, 1);
     border-radius: 10px;
     margin-left: 60px;
     margin-right: 60px;
@@ -132,23 +101,15 @@ tooltip {
     border-left: 0px;
 }
 
-#pulseaudio {
-    color: #89b4fa;
-    border-left: 0px;
-    border-right: 0px;
-}
-
-#pulseaudio.microphone {
-    color: #cba6f7;
-    margin-right: 5px;
-    border-radius: 0 10px 10px 0;
-}
-
 #wireplumber {
     color: #89b4fa;
     border-left: 0px;
     border-right: 0px;
     border-radius: 10px 0px 0px 10px;
+}
+
+#wireplumber.muted {
+    color: #6c7086;
 }
 
 #battery {
@@ -157,8 +118,20 @@ tooltip {
     border-right: 0px;
 }
 
-#custom-weather {
-    border-radius: 0px 10px 10px 0px;
+#battery.charging {
+    color: #94e2d5;
+}
+
+#battery.warning:not(.charging) {
+    color: #fab387;
+}
+
+#battery.critical:not(.charging) {
+    color: #f38ba8;
+}
+
+#backlight {
+    color: #f5c2e7;
+    border-left: 0px;
     border-right: 0px;
-    margin-left: 0px;
 }
