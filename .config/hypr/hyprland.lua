@@ -78,7 +78,7 @@ hl.config({
             inactive_border = "rgba(595959aa)",
         },
 
-        layout = "master",
+        layout = "lua:aerospace",
     },
 
     decoration = {
@@ -113,6 +113,9 @@ hl.animation({ leaf = "workspaces", enabled = true, speed = 5, bezier = "default
 -----------------
 ---- LAYOUTS ----
 -----------------
+
+local aero = require("aerospace")
+aero.setup()
 
 hl.config({
     dwindle = {
@@ -153,55 +156,16 @@ hl.workspace_rule({ workspace = "10", monitor = "HDMI-A-1" })
 
 local mainMod = "SUPER"
 
--- Monocle layout toggle (global, flips between master and monocle)
+-- Monocle layout toggle (global, flips between aerospace and monocle)
 local monocle_active = false
 local function toggle_monocle()
     if monocle_active then
         monocle_active = false
-        hl.config({ general = { layout = "master" } })
+        hl.config({ general = { layout = "lua:aerospace" } })
     else
         monocle_active = true
         hl.config({ general = { layout = "monocle" } })
     end
-end
-
--- J: cycle forward through group; pop out to next tile at end of group
-local function cycle_j()
-    local win = hl.get_active_window()
-    if win and win.group and win.group.size > 0 then
-        if win.group.current_index < win.group.size then
-            hl.dispatch(hl.dsp.group.next())
-        else
-            hl.dispatch(hl.dsp.window.cycle_next())
-        end
-    else
-		hl.dispatch(hl.dsp.layout("cyclenext"))
-        hl.dispatch(hl.dsp.window.bring_to_top())
-    end
-end
-
--- K: cycle backward through group; pop out to prev tile at start of group
-local function cycle_k()
-    local win = hl.get_active_window()
-    if win and win.group and win.group.size > 0 then
-        if win.group.current_index > 1 then
-            hl.dispatch(hl.dsp.group.prev())
-        else
-            hl.dispatch(hl.dsp.window.cycle_next("prev"))
-        end
-    else
-		hl.dispatch(hl.dsp.layout("cycleprev"))
-        hl.dispatch(hl.dsp.window.bring_to_top())
-    end
-end
-
--- SHIFT+J/K: move active window into the next/prev group on the workspace
-local function shift_j()
-    hl.dispatch(hl.dsp.group.move_window(true))
-end
-
-local function shift_k()
-    hl.dispatch(hl.dsp.group.move_window(false))
 end
 
 -- Terminals & apps
@@ -232,32 +196,26 @@ hl.bind(mainMod .. " + SHIFT + Print", hl.dsp.exec_cmd("grimblast copy area"))
 hl.bind(mainMod .. " + G",         hl.dsp.group.toggle())
 hl.bind(mainMod .. " + SHIFT + G", hl.dsp.group.lock())
 
--- Master layout
-hl.bind(mainMod .. " + RETURN", hl.dsp.layout("swapwithmaster"))
-hl.bind(mainMod .. " + N",      hl.dsp.layout("addmaster"))
-hl.bind(mainMod .. " + M",      hl.dsp.layout("removemaster"))
+-- AeroSpace-style tree: focus / move / join-with (H/J/K/L or arrows)
+local dirs = { H = "left", J = "down", K = "up", L = "right", left = "left", down = "down", up = "up", right = "right" }
+for key, dir in pairs(dirs) do
+    hl.bind(mainMod .. " + " .. key,              aero.cmd("focus " .. dir))
+    hl.bind(mainMod .. " + SHIFT + " .. key,      aero.cmd("move " .. dir))
+    hl.bind(mainMod .. " + CTRL + " .. key,       aero.cmd("join-with " .. dir))
+end
+hl.bind(mainMod .. " + TAB", hl.dsp.window.cycle_next())
 
--- Focus movement (H/L always move between tiles; J/K are context-aware)
-hl.bind(mainMod .. " + left",  hl.dsp.focus({ direction = "left"  }))
-hl.bind(mainMod .. " + right", hl.dsp.focus({ direction = "right" }))
-hl.bind(mainMod .. " + up",    hl.dsp.focus({ direction = "up"    }))
-hl.bind(mainMod .. " + down",  hl.dsp.focus({ direction = "down"  }))
-hl.bind(mainMod .. " + H",     hl.dsp.focus({ direction = "left"  }))
-hl.bind(mainMod .. " + L",     hl.dsp.focus({ direction = "right" }))
-hl.bind(mainMod .. " + J",     cycle_j)
-hl.bind(mainMod .. " + K",     cycle_k)
-hl.bind(mainMod .. " + TAB",   hl.dsp.window.cycle_next())
+-- Container layout (AeroSpace alt-slash / alt-comma)
+hl.bind(mainMod .. " + period", aero.cmd("layout tiles horizontal vertical"))
+hl.bind(mainMod .. " + comma",  aero.cmd("layout accordion horizontal vertical"))
 
--- Resize master area
-hl.bind(mainMod .. " + SHIFT + H", hl.dsp.layout("mfact -0.05"))
-hl.bind(mainMod .. " + SHIFT + L", hl.dsp.layout("mfact +0.05"))
-
--- Move window into next/prev group
-hl.bind(mainMod .. " + SHIFT + J", shift_j)
-hl.bind(mainMod .. " + SHIFT + K", shift_k)
-
--- Rotate master orientation (cycle forward only)
-hl.bind(mainMod .. " + SHIFT + R", hl.dsp.layout("orientationnext"))
+-- Resize
+hl.bind(mainMod .. " + ALT + H", aero.cmd("resize width -50"))
+hl.bind(mainMod .. " + ALT + L", aero.cmd("resize width +50"))
+hl.bind(mainMod .. " + ALT + J", aero.cmd("resize height -50"))
+hl.bind(mainMod .. " + ALT + K", aero.cmd("resize height +50"))
+hl.bind(mainMod .. " + SHIFT + B", aero.cmd("balance-sizes"))
+hl.bind(mainMod .. " + SHIFT + R", aero.cmd("flatten-workspace-tree"))
 
 -- Switch / move to workspaces 1-10 (key 0 = workspace 10)
 for i = 1, 10 do

@@ -1,12 +1,12 @@
 ---
 name: jira
-description: 'Fetch and inspect JIRA (Server/Data Center) issues. Use when the user provides a JIRA ticket as a URL (.../browse/KEY-123) or a bare key/number (KEY-123), or asks to "read this jira", "look up ticket", "show issue", "fetch jira", "get the comments on", or run a JQL search. Configured via the JIRA_BASE_URL and JIRA_TOKEN env vars.'
+description: 'Fetch, inspect and update JIRA (Server/Data Center) issues. Use when the user provides a JIRA ticket as a URL (.../browse/KEY-123) or a bare key/number (KEY-123), or asks to "read this jira", "look up ticket", "show issue", "fetch jira", "get the comments on", run a JQL search, move/transition a ticket to a status, or create a sub-task. Configured via the JIRA_BASE_URL and JIRA_TOKEN env vars.'
 ---
 
 # JIRA
 
-Fetch issues, comments, attachments, and run JQL searches against
-the JIRA instance at `$JIRA_BASE_URL` using the `JIRA_TOKEN` env var (bearer auth).
+Fetch issues, comments, attachments, run JQL searches, move issues between
+statuses, and create sub-tasks on the JIRA instance at `$JIRA_BASE_URL` using the `JIRA_TOKEN` env var (bearer auth).
 
 ## Setup
 
@@ -54,6 +54,14 @@ JIRA="<this skill dir>/jira.sh"
 | `jira.sh raw <key\|url>` | Full raw JSON (all fields) for digging into anything else |
 | `jira.sh search '<JQL>'` | Run a JQL query, list matching keys + summaries |
 
+Write commands (run only when the user asked for the change):
+
+| Command | What it does |
+|---------|--------------|
+| `jira.sh transitions <key\|url>` | List available transitions: id, name, target status |
+| `jira.sh transition <key\|url> <name\|status\|id>` | Move the issue. Matches exactly (case-insensitive) on transition id, name or target status; otherwise lists the options and changes nothing |
+| `jira.sh create-subtask <parent> <summary> [--desc TEXT \| --desc-file FILE]` | Create a sub-task in the parent's project; prints key and URL. Description is Jira wiki markup (`*bold*`, `{{code}}`, `* bullet`) |
+
 ## Input normalization
 
 The script accepts any of these and resolves to the issue key:
@@ -71,4 +79,11 @@ The script accepts any of these and resolves to the issue key:
 - For images/screenshots referenced in a description (e.g.
   `!image-...-.png!`), use `download` to fetch them, then `read` them.
 - Use the returned `Pipeline build` / linked URLs as leads when diagnosing.
+- Status names differ per board and users speak loosely ("move to review").
+  Run `transitions` and pick the exact match; if there is none, choose the
+  closest and tell the user which status you used, or ask when it is unclear.
+- Before `create-subtask`, confirm the parent (search for it if the user names
+  it loosely). It cannot be a sub-task itself.
 - Never print the token.
+
+Offline verification: `bash <this skill dir>/test_jira.sh`.

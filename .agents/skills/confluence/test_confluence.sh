@@ -25,6 +25,35 @@ curl() {
     return
   fi
   [[ "$url" == https://wiki.example.com/rest/api/content/* ]] || return 92
+  local method=GET data= form=
+  set -- "$@"
+  while (( $# )); do
+    case "$1" in --request) method="$2" ;; --data-binary) data="${2#@}" ;; --form) form+="$2|" ;; esac
+    shift
+  done
+  if [[ "$method" != GET ]]; then
+    [[ "$MODE" != failure ]] || { printf '{"message":"nope"}'; return 22; }
+    case "$method $url" in
+      'PUT https://wiki.example.com/rest/api/content/40')
+        jq -e '.version.number == 5 and .version.message == "msg" and .title == "Old"
+          and .body.storage.value == "<p>New</p>\n"' "$data" >/dev/null || return 94
+        printf '{"id":"40","title":"Old","version":{"number":5}}' ;;
+      'POST https://wiki.example.com/rest/api/content/40/child/attachment')
+        [[ "$form" == *'filename=new.drawio;'* || "$form" == *';filename=new.drawio|'* ]] || return 95
+        printf '{"results":[{"id":"att9","title":"new.drawio","version":{"number":1}}]}' ;;
+      'POST https://wiki.example.com/rest/api/content/40/child/attachment/att1/data')
+        printf '{"id":"att1","title":"old.drawio","version":{"number":3}}' ;;
+      *) printf 'Unexpected write: %s %s\n' "$method" "$url" >&2; return 96 ;;
+    esac
+    return
+  fi
+  case "$url" in
+    *'/40?expand=version') printf '{"id":"40","title":"Old","version":{"number":4}}'; return ;;
+    *'/40/child/attachment?filename=old.drawio') printf '{"results":[{"id":"att1"}]}'; return ;;
+    *'/40/child/attachment?filename=new.drawio') printf '{"results":[]}'; return ;;
+    *'/search?limit=50&expand=space&cql=title%20~%20%22API%20review%22')
+      printf '{"results":[{"id":"7","title":"API review","space":{"key":"CHA"}}]}'; return ;;
+  esac
   case "$MODE" in
     failure) return 22 ;;
     login) printf '<html>Login</html>'; return ;;
@@ -115,4 +144,34 @@ expect_status 2 diagrams 30
 [[ "$output" == *'  - Svc A'* && "$output" == *'  - Svc B'* ]]
 [[ "$output" == *'  - Svc A -> Svc B : calls [cardinality 1 : 0..*]'* ]]
 [[ "$output" == *'# 2. Gone'*'(download failed)'* && "$output" == *'Incomplete:'* ]]
-printf 'PASS: URL parsing, page/raw output, pagination, hierarchy, limits, auth, diagrams, and failures\n'
+# Short links decode to the little-endian page ID (nlqYrQ is a real one).
+short="$(python3 -c 'import base64;print(base64.b64encode((2830402104).to_bytes(8,"little")).decode().rstrip("=").rstrip("A").replace("/","-").replace("+","_"))')"
+expect_status 0 page "https://wiki.example.com/x/$short"
+[[ "$output" == *'ID:      2830402104'* ]]
+[[ "$(python3 -c 'import base64;s="nlqYrQ";print(int.from_bytes(base64.b64decode((s+"A"*11)[:11]+"="),"little"))')" == 2912443038 ]]
+expect_status 1 page 'https://wiki.example.com/x/bad!code'
+expect_status 0 search 'title ~ "API review"'
+[[ "$output" == '7  [CHA] API review  https://wiki.example.com/pages/viewpage.action?pageId=7' ]]
+tmp="$(mktemp -d)"; printf '<p>New</p>\n' >"$tmp/new.html"; : >"$tmp/empty.html"; printf 'x' >"$tmp/f"
+expect_status 0 update 40 "$tmp/new.html" --message msg
+[[ "$output" == *'Updated Old to version 5'* ]]
+expect_status 1 update 40 "$tmp/empty.html"
+expect_status 1 update 40 "$tmp/new.html" --bogus x
+MODE=failure expect_status 1 update 40 "$tmp/new.html" --message msg
+[[ "$output" == *'nope'* ]]
+expect_status 0 attach 40 "$tmp/f" --name new.drawio
+[[ "$output" == $'att9\t1\tnew.drawio' ]]
+expect_status 0 attach 40 "$tmp/f" --name old.drawio
+[[ "$output" == $'att1\t3\told.drawio' ]]
+# set-macro: repoint an existing macro, insert after an anchor, refuse ambiguity.
+macro='<h1>M</h1><ac:structured-macro ac:name="drawio"><ac:parameter ac:name="diagramName">D</ac:parameter><ac:parameter ac:name="revision">1</ac:parameter></ac:structured-macro>'
+out="$(printf '%s' "$macro" | python3 "$(dirname "$HELPER")/drawio.py" set-macro D 3 100 50)"
+[[ "$out" == *'name="revision">3<'* && "$out" == *'name="diagramWidth">100<'* && "$out" != *'name="revision">1<'* ]]
+out="$(printf '<h1>M</h1>' | python3 "$(dirname "$HELPER")/drawio.py" set-macro New 1 10 10 '<h1>M</h1>')"
+[[ "$out" == '<h1>M</h1><p><ac:structured-macro ac:name="drawio"'*'name="diagramName">New<'* ]]
+if printf '<h1>M</h1>' | python3 "$(dirname "$HELPER")/drawio.py" set-macro New 1 10 10 2>/dev/null ||
+  printf '<p/><p/>' | python3 "$(dirname "$HELPER")/drawio.py" set-macro New 1 10 10 '<p/>' 2>/dev/null; then
+  echo 'set-macro should refuse a missing or ambiguous anchor' >&2; exit 1
+fi
+rm -r "$tmp"
+printf 'PASS: URL parsing, short links, page/raw output, search, pagination, hierarchy, limits, auth, diagrams, writes, and failures\n'
