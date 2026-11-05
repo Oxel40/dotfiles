@@ -1,0 +1,13 @@
+# guard global allow list. Install:
+#   mkdir -p ~/.config/guard && cp guard-allow ~/.config/guard/guard-allow
+# One path per line; absolute or ~/. Missing paths are skipped.
+~/.local/share/opencode
+~/.local/state/opencode
+~/.cache/opencode
+~/.config/opencode
+~/.pi
+~/.gradle
+~/.local/share/fnm_multishells
+~/.local/state/fnm_multishells
+~/.cache/fnm_multishells
+~/.cargo
