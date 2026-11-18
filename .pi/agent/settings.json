@@ -3,7 +3,7 @@
   "defaultProvider": "github-copilot",
   "defaultThinkingLevel": "medium",
   "enableInstallTelemetry": false,
-  "lastChangelogVersion": "1.5.0",
+  "lastChangelogVersion": "1.5.2",
   "packages": [
     "git:github.com/DietrichGebert/ponytail"
   ],
@@ -11,7 +11,7 @@
   "theme": "dark",
   "modelThinkingLevels": {
     "github-copilot/gpt-6-luna": "max",
-    "github-copilot/claude-opus-5.5": "medium"
+    "github-copilot/claude-opus-5.5": "high"
   },
   "enabledModels": [
     "github-copilot/gpt-6-luna",
