@@ -74,10 +74,14 @@ Every agent needs `write` (for its report) and `bash` (to spawn children). For r
 
 Two workers editing the same checkout will overwrite each other's changes. Read-only workers can share one.
 
+Put worktrees in the run dir, not next to the repo, so they stay out of the user's tree and live with the rest of the run:
+
 ```bash
-git worktree add ../$(basename $PWD)-impl-auth -b impl-auth   # pass that dir as spawn.sh's workdir
-# merge back, then: git worktree remove ../<dir>
+git worktree add $RUN/wt/impl-auth -b impl-auth   # pass that dir as spawn.sh's workdir
+# merge back, then: git worktree remove $RUN/wt/impl-auth
 ```
+
+The branch lives in the main repo, so commits survive the worktree. Uncommitted changes do not: macOS purges `$TMPDIR` after a few days, so have workers commit and merge before the run ends. If the run dir is gone, run `git worktree prune`.
 
 ## Rules
 
